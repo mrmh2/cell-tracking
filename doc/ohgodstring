@@ -1,0 +1,1 @@
+./bin/getLnumbers src/matchcells/matchyourcell_01.par Tmp data/pdata/data/original/spch1_03_t10_cropped.png data/pdata/data/segmented/EditSegmentation2D_001338982855_spch1_03_t10_cropped.png data/pdata/data/segmented/EditSegmentation2D_001338982855_spch1_03_t10_cropped.png
