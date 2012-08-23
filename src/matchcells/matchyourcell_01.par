@@ -1,0 +1,16 @@
+boundary		1       //WRAP=0;FIXED=1;ECHO=2
+
+biggestCellOnly		0
+
+excludeEdgeCells	1
+excludeOutliersSize	1
+
+saveAverages		0
+
+saveCellData		0
+saveCellPositions	0
+saveCellOutlines	0
+
+inoofharmonicsanalyse	15
+totalcelltypes		3
+
