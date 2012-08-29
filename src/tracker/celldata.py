@@ -14,6 +14,15 @@ from pygame import surfarray
 class Cell:
     def __init__(self, points_list):
         self.pl = points_list
+    
+    def __iter__(self):
+        return iter(self.pl)
+
+    def __len__(self):
+        return len(self.pl)
+
+    def append(self, value):
+        self.pl.append(value)
 
 def compositeRGB_to_components(c):
     R = c % 256
@@ -84,7 +93,8 @@ def cell_dict_from_file(image_file, sx, sy):
                 c = b + 256 * g + 256 * 256 * r
                 cmap[val] = c
 
-            if c not in cd: cd[c] = [(x, y)]
+            if c not in cd: cd[c] = Cell([(x, y)])
+            #if c not in cd: cd[c] = [(x, y)]
             else: cd[c].append((x, y))
 
     return cd
@@ -130,14 +140,7 @@ class CellData:
 
         return npl
 
-def main():
-    try:
-        image_file = sys.argv[1]
-        l_file = sys.argv[2]
-    except IndexError:
-        print "Usage: %s image_file" % os.path.basename(sys.argv[0])
-        sys.exit(0)
-
+def some_testing(image_file, l_file):
     sx = 1
     sy = 1
     cd = cell_dict_from_file(image_file, sx, sy)
@@ -152,5 +155,17 @@ def main():
     #print sorted(list(b  - (a & b)))
 
 
+def main():
+    try:
+        image_file = sys.argv[1]
+    except IndexError:
+        print "Usage: %s image_file" % os.path.basename(sys.argv[0])
+        sys.exit(0)
+
+    cd = cell_dict_from_file(image_file, 1, 1)
+
+    #for p in cd[12]:
+    #    print p
+   
 if __name__ == '__main__':
     main()
