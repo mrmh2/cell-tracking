@@ -1,26 +1,22 @@
 #!/usr/bin/env python
 
+import pprint
 import pickle
 import sys
+import random
+import hashlib
+from math import sqrt
+
 import pygame
 import pygame.surfarray as surfarray
 from pygame.locals import *
-import random
 from Lforleather import *
-from math import sqrt
 import numpy
-import hashlib
 
-#frame1_file = "frame2_seg.png"
-#frame2_file = "frame3_seg.png"
-#frame1_orig = "frame2_orig.png"
-#frame2_orig = "frame3_orig.png"
+import celldata as cd
+
 caption_string = "Cell tracking"
-#psize = 500
-#yp = 50
-#d = 10
-#gv = (0, 0)
-gsx = 0.35
+gsx = 0.25
 
 debug = True
 
@@ -61,7 +57,8 @@ class MatchData:
         print "MD initialised, %dx%d" % (self.xdim, self.ydim)
 
     def make_ready(self):
-        self.m = build_matrix(self.lfile1, self.lfile2, weight_contrib, cachedir='/mnt/tmp')
+        #self.m = build_matrix(self.lfile1, self.lfile2, weight_contrib, cachedir='/mnt/tmp')
+        self.m = build_matrix(self.lfile1, self.lfile2, weight_contrib, cachedir=None)
         self.ready = True
 
     def set_display_panels(self, from_panel, to_panel, match_panel, extra_panel):
@@ -1388,7 +1385,41 @@ def build_celldict(imgarray):
 
     return cd
 
-def cell_dict_from_file(filename, sx, sy):
+def cell_dict_from_file(image_file, sx, sy):
+    """Take a numpy array containing values that represent segmentation ID, and return a
+    dictionary keyed by the ID containing a list of points in absolute coordinates which
+    comprise that cell"""
+
+    try:
+        imgsurface = pygame.image.load(image_file)
+    except pygame.error, e:
+        print "Couldn't load %s" % filename
+        print e
+        sys.exit(2)
+
+    xdim, ydim = imgsurface.get_size()
+    imgsurface = pygame.transform.scale(imgsurface, (int(xdim * sx), int(ydim * sy)))
+    imgarray = surfarray.array2d(imgsurface)
+
+    cmap = {}
+    cd = {}
+    for x in range(0, xdim):
+        for y in range(0, ydim):
+
+            val = imgarray[x, y]
+            if val in cmap:
+                c = cmap[val]
+            else:
+                r, g, b, a = imgsurface.unmap_rgb(val)
+                c = b + 255 * g + 255 * 255 * r
+                cmap[val] = c
+
+            if c not in cd: cd[c] = [(x, y)]
+            else: cd[c].append((x, y))
+
+    return cd
+
+def old_cell_dict_from_file(filename, sx, sy):
     try:
         imgsurface = pygame.image.load(filename)
         xdim, ydim = imgsurface.get_size()
@@ -1436,7 +1467,7 @@ def cell_dict_with_caching(filename, sx, sy, cachedir):
 
 class CellData:
     def __init__(self, filename, sx, sy, cachedir='/mnt/tmp'):
-        self.cd = cell_dict_from_file(filename, sx, sy)
+        self.cd = cd.cell_dict_from_file(filename, sx, sy)
 
     def set_disp_panel(self, disp_panel):
         self.disp_panel = disp_panel
@@ -1577,10 +1608,7 @@ def fit_all_elements(elements):
 
     return xmax, ymax
     
-
-def main():
-    global myra, rpanel
-
+def old_loader():
     if len(sys.argv) > 1:
         trackfile = sys.argv[1]
     else:
@@ -1589,6 +1617,35 @@ def main():
     print "Reading trackfile...",
     datapoints = read_datafile(trackfile)
     print "done"
+
+    return datapoints
+
+
+def new_loader(expname):
+    sys.path.insert(0, '/Users/hartleym/local/python')
+    import get_data_files as gdf
+
+    #trackfile = 'src/tracker/trackdata.txt'
+    #datapoints = read_datafile(trackfile)
+    #print datapoints
+
+    d = gdf.get_data_files(expname)
+    dps = []
+    for dp in sorted(d.iteritems()):
+        print dp
+        name, vd = dp
+        a = [vd['Rotated projection'], vd['Rotated image'], vd['L numbers']]
+        dps.append(a)
+
+    return dps
+
+    sys.exit(0)
+
+
+def main():
+    global myra, rpanel
+
+    datapoints = new_loader(sys.argv[1])
 
     print "Initialising display manager...",
     dm = display_init(datapoints)
@@ -1611,6 +1668,7 @@ def main():
         lf2 = datapoints[i+1][2]
         md = MatchData(dm.elements[0].xdim, dm.elements[0].ydim, cds[i], cds[i+1], lf1, lf2)
         mds.append(md)
+
 
     dm.mds = mds
     dm.set_current_md(4)

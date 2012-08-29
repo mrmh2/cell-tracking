@@ -110,6 +110,9 @@ def build_matrix(lfile1, lfile2, comp_func=comp_contrib, cachedir='/tmp/cache'):
 
     #print hashlib.algorithms
 
+    if cachedir == None:
+        return build_matrix_from_files(lfile1, lfile2, comp_func)
+
     pickhash = hashlib.sha256(lfile1 + lfile2).hexdigest() + '.p'
     
     pickname = os.path.join(cachedir, pickhash)
