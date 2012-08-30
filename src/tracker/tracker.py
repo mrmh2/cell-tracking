@@ -1622,7 +1622,8 @@ def old_loader():
 
 
 def new_loader(expname):
-    sys.path.insert(0, '/Users/hartleym/local/python')
+    hd = os.getenv('HOME')
+    sys.path.insert(0, os.path.join(hd, 'local/python'))
     import get_data_files as gdf
 
     #trackfile = 'src/tracker/trackdata.txt'
