@@ -12,6 +12,8 @@ import display
 import intarray
 import celldata
 import displaymanager as dm
+import matchdisplay
+
 
 def overlay_highlighter(ov, cd):
 
@@ -59,10 +61,10 @@ def main():
     xdim = 1024
     ydim = 600
     caption_string = "Display test"
-    image_file = 'data/newexp/rotated_image/T05.png'
-    image_file2 = 'data/newexp/rotated_image/T06.png'
-    proj_file = 'data/newexp/rotated_projection/T05.png'
-    proj_file2 = 'data/newexp/rotated_projection/T06.png'
+    image_file = 'data/newexp/segmented_image/T05.png'
+    image_file2 = 'data/newexp/segmented_image/T06.png'
+    proj_file = 'data/newexp/projection/T05.png'
+    proj_file2 = 'data/newexp/projection/T06.png'
     
     #imgsurface = pygame.image.load(image_file)
     td = display.TrackerDisplay(xdim, ydim, caption_string)
@@ -74,25 +76,26 @@ def main():
 
     dmanager = dm.DisplayManager(td)
 
-    bbox = bb.BoundingBox((0, 0), (xdim, ydim/2))
-    bbox2 = bb.BoundingBox((0, ydim/2), (xdim, ydim/2))
+    bbox = bb.BoundingBox((0, 0), (xdim/3, ydim))
+    bbox2 = bb.BoundingBox((2 * xdim/3, 0), (xdim/3, ydim))
+    bbox3 = bb.BoundingBox((xdim/3, 0), (xdim/3, ydim))
 
     da = dm.DisplayArea(bbox)
     de = dm.ImageElement(image_file)
+    xdim1, ydim1 = de.xdim, de.ydim
     ia1 = intarray.InteractorArray(de.imgarray) 
     de.iarray = ia1
     de2 = dm.ImageElement(proj_file, array=False)
     de2.visible = False
     da.add_element(de)
     da.add_element(de2)
-
     ov1 = de.generate_overlay()
     da.add_element(ov1)
-
     dmanager.add_area(da)
 
     da = dm.DisplayArea(bbox2)
     de = dm.ImageElement(image_file2)
+    xdim2, ydim2 = de.xdim, de.ydim
     de2 = dm.ImageElement(proj_file2, array=False)
     de2.visible = False
     ia2 = intarray.InteractorArray(de.imgarray) 
@@ -103,12 +106,22 @@ def main():
     da.add_element(ov2)
     dmanager.add_area(da)
 
+    da = dm.DisplayArea(bbox3)
+    npa = np.zeros([bbox3.xdim, bbox3.ydim, 3], dtype=np.int8)
+    de = dm.OverlayElement(npa)
+    da.add_element(de)
+    dmanager.add_area(da)
+
     dmanager.update()
 
     celldata1 = celldata.CellData(image_file)
     ia1.onclick = overlay_highlighter(ov1, celldata1)
 
     ov1.plot_points(celldata1[15], (255, 255, 255))
+
+    for x in range(50, 100):
+        for y in range(50, 100):
+            npa[x, y] = 0, 0, 255
 
     while True:
         scale, (pan_x, pan_y) = input_loop(pygame.event.get(), scale, dmanager)
