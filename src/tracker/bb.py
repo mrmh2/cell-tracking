@@ -10,3 +10,9 @@ class BoundingBox():
         ydim = int(scale_factor * self.ydim)
 
         return BoundingBox((self.x, self.y), (xdim, ydim))
+
+    def contains(self, (x, y)):
+        if x >= self.x and x < self.x + self.xdim:
+            if y >= self.y and y < self.y + self.ydim:
+                return True
+        return False

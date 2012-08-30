@@ -1,5 +1,9 @@
+import sys
+
+import numpy as np
 import pygame
 
+import intarray
 import display
 import bb
 
@@ -7,15 +11,75 @@ class DisplayElement():
     def __init__(self):
         pass
 
-class ImageElement(DisplayElement):
-    def __init__(self, filename):
-        self.imgsurface = pygame.image.load(filename)
-        self.xdim, self.ydim = self.imgsurface.get_size()
+    def toggle_visible(self):
+        self.visible = not self.visible
+
+    def mouse_input(self, p, button):
+        print "Base method"
+
+class OverlayElement(DisplayElement):
+    def __init__(self, array):
+        self.array = array
+        self.surface = pygame.surfarray.make_surface(array)
+        self.surface.set_colorkey((0, 0, 0))
+        self.xdim, self.ydim = self.surface.get_size()
+        print self.surface.get_size()
 
     def draw(self, display, bbox):
+        pygame.surfarray.blit_array(self.surface, self.array)
         aspect_ratio = float(self.xdim) / float(self.ydim)
         dbox = bb.BoundingBox((bbox.x, bbox.y), (int(aspect_ratio * bbox.ydim), bbox.ydim))
-        display.display_image(self.imgsurface, dbox)
+        display.display_image(self.surface, dbox, rescale=True)
+
+    def __setitem__(self, (x, y),  c):
+        self.array[x, y] = c
+
+    def plot_points(self, pl, c):
+        for p in pl:
+            x, y = p
+            self[x, y] = c
+
+class ImageElement(DisplayElement):
+    def __init__(self, filename, array=True):
+        self.imgsurface = pygame.image.load(filename)
+        self.xdim, self.ydim = self.imgsurface.get_size()
+        self.visible = True
+        if array:
+            self.imgarray = pygame.surfarray.array2d(self.imgsurface)
+        else:
+            self.imgarray = None
+
+    def generate_overlay(self):
+        xdim, ydim = self.xdim, self.ydim
+        npa = np.zeros([xdim, ydim, 3], dtype=np.int8)
+        return OverlayElement(npa)
+
+    def draw(self, display, bbox):
+        self.cmult = max(float(self.xdim) / float(bbox.xdim), float(self.ydim) / float(bbox.ydim))
+
+        if self.visible:
+            aspect_ratio = float(self.xdim) / float(self.ydim)
+            dbox = bb.BoundingBox((bbox.x, bbox.y), (int(aspect_ratio * bbox.ydim), bbox.ydim))
+            display.display_image(self.imgsurface, dbox, rescale=True)
+
+    def mouse_input(self, p, button):
+        x, y = p
+        cx, cy =  int(x * self.cmult), int(y * self.cmult)
+
+        try:
+            self.iarray.mouse_click((cx, cy), button)
+        except AttributeError:
+            pass
+        #if self.imgarray is not None:
+            #self.array_handler(
+            #print self.imgarray[cx, cy]
+
+        #self.show_info()
+
+    def show_info(self):
+        print self.imgsurface.get_size()
+        print self.imgarray.shape
+
 
 class DisplayArea:
     def __init__(self, bbox):
@@ -32,11 +96,16 @@ class DisplayArea:
     def update(self, display):
         for de in self.delements:
             de.draw(display, self.bbox)
+
+    def mouse_input(self, (x, y), button):
+        for de in self.delements:
+            de.mouse_input((x - self.x, y - self.y), button)
     
 
 class DisplayManager():
     def __init__(self, tdisplay=None):
         self.tdisplay = tdisplay
+        self.xdim, self.ydim = tdisplay.get_size()
         self.dareas = []
         #self.elements = elements
         #self.ips = ips
@@ -45,6 +114,17 @@ class DisplayManager():
         #self.cmd = 0
         #self.mode_string = "Loaded images"
 
+    def mouse_input(self, p, button):
+        for a in self.dareas:
+            if a.bbox.contains(p):
+                a.mouse_input(p, button)
+        
+    def key_input(self, keyval):
+        if keyval == 314:
+            for a in self.dareas:
+                for e in a.delements:
+                    e.toggle_visible()
+
     def update(self):
         for da in self.dareas:
             da.update(self.tdisplay)
@@ -52,6 +132,11 @@ class DisplayManager():
 
     def add_area(self, darea):
         self.dareas.append(darea)
+
+
+    ########################################################
+    # OLD
+    ########################################################
 
     def draw(self, surface=None):
         if surface == None:
@@ -93,12 +178,12 @@ class DisplayManager():
         self.current_md.uimage = self.elements[0].content.current_surface
         self.current_md.limage = self.elements[2].content.current_surface
 
-    def mouse_input(self, x, y, button):
-        for e in self.elements:
-            #print e.x, e.y, e.x + e.xdim, e.y + e.ydim
-            if x > e.x and x < e.x + e.xdim and y > e.y and y < e.y + e.ydim:
-                e.mouse_input(x - e.x, y - e.y, button)
-                #print "Match"
+    #def mouse_input(self, x, y, button):
+    #    for e in self.elements:
+    #        #print e.x, e.y, e.x + e.xdim, e.y + e.ydim
+    #        if x > e.x and x < e.x + e.xdim and y > e.y and y < e.y + e.ydim:
+    #            e.mouse_input(x - e.x, y - e.y, button)
+    #            #print "Match"
 
     def page_up(self):
 

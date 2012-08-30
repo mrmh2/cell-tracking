@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+class ArrayElement(DisplayElement):
+    def __init__(self, 
+
 import pprint
 import pickle
 import sys

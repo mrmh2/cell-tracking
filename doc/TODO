@@ -1,3 +1,4 @@
+TODO: Inputmanager should take some way of displaymanager's functions
 TODO: Tidy up file layout. A lot.
 TODO: Nicer way of loading data
 TODO: Load cell dict with scipy.imread not pygame
