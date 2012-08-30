@@ -4,3 +4,4 @@ Tmp/
 bin/*
 *.o
 *.a
+*.pyc
