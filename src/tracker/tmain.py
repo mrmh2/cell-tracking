@@ -19,6 +19,7 @@ def overlay_highlighter(ov, cd):
 
     def highlight_it(cid):
         ov.plot_points(cd[cid], (255, 255, 255))
+        print cd[cid].lnumbers
 
     return highlight_it
 
@@ -65,6 +66,7 @@ def main():
     image_file2 = 'data/newexp/segmented_image/T06.png'
     proj_file = 'data/newexp/projection/T05.png'
     proj_file2 = 'data/newexp/projection/T06.png'
+    l_file = 'data/newexp/l_numbers/T05.txt'
     
     #imgsurface = pygame.image.load(image_file)
     td = display.TrackerDisplay(xdim, ydim, caption_string)
@@ -114,10 +116,10 @@ def main():
 
     dmanager.update()
 
-    celldata1 = celldata.CellData(image_file)
+    celldata1 = celldata.CellData(image_file, l_file)
     ia1.onclick = overlay_highlighter(ov1, celldata1)
 
-    ov1.plot_points(celldata1[15], (255, 255, 255))
+    #ov1.plot_points(celldata1[15], (255, 255, 255))
 
     for x in range(50, 100):
         for y in range(50, 100):

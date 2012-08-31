@@ -11,6 +11,8 @@ import pygame
 import pygame.display
 from pygame import surfarray
 
+import lnumbers
+
 class Cell:
     def __init__(self, points_list):
         self.pl = points_list
@@ -25,15 +27,25 @@ class Cell:
         self.pl.append(value)
 
 class CellData:
-    def __init__(self, filename):
+    def __init__(self, filename, lfile=None):
         cd = cell_dict_from_file(filename)
         self.cd = cd
+
+        if lfile is not None:
+            self.read_l_numbers(lfile)
 
     def keys(self):
         return self.cd.keys()
 
     def __getitem__(self, value):
-        return self.cd[value].pl
+        return self.cd[value]
+
+    def read_l_numbers(self, filename):
+        ln = lnumbers.parse_l_file(filename)
+
+        for cid in ln:
+            self.cd[cid].lnumbers = ln[cid]
+        
 
 def cell_dict_from_file(image_file):
     """Take a numpy array containing values that represent segmentation ID, and return a
@@ -114,16 +126,16 @@ def some_testing(image_file, l_file):
 def main():
     try:
         image_file1 = sys.argv[1]
-        image_file2 = sys.argv[2]
+        l_file = sys.argv[2]
     except IndexError:
-        print "Usage: %s image_file1 image_file2" % os.path.basename(sys.argv[0])
+        print "Usage: %s image_file l_file" % os.path.basename(sys.argv[0])
         sys.exit(0)
 
-    celldata1 = CellData(image_file1)
-    #celldata2 = CellData(image_file2)
+    celldata1 = CellData(image_file1, l_file)
 
     print celldata1.keys()
-    #print celldata1[15]
+
+    print celldata1[694].lnumbers
 
 
 if __name__ == '__main__':
