@@ -15,7 +15,8 @@ class DisplayElement():
         self.visible = not self.visible
 
     def mouse_input(self, p, button):
-        print "Base method"
+        pass
+        #print "Base method"
 
 class OverlayElement(DisplayElement):
     def __init__(self, array):
@@ -27,12 +28,22 @@ class OverlayElement(DisplayElement):
 
     def draw(self, display, bbox):
         pygame.surfarray.blit_array(self.surface, self.array)
-        aspect_ratio = float(self.xdim) / float(self.ydim)
-        dbox = bb.BoundingBox((bbox.x, bbox.y), (int(aspect_ratio * bbox.ydim), bbox.ydim))
+        
+        if self.ydim > self.xdim:
+            aspect_ratio = float(self.xdim) / float(self.ydim)
+            dbox = bb.BoundingBox((bbox.x, bbox.y), (int(aspect_ratio * bbox.ydim), bbox.ydim))
+        else:
+            aspect_ratio = float(self.ydim) / float(self.xdim)
+            dbox = bb.BoundingBox((bbox.x, bbox.y), (bbox.xdim, int(aspect_ratio * bbox.xdim)))
+
         display.display_image(self.surface, dbox, rescale=True)
 
     def __setitem__(self, (x, y),  c):
         self.array[x, y] = c
+
+    def blank(self):
+    # TODO - this could be better (find type and set zeros)
+        self.array = self.array - self.array
 
     def plot_points(self, pl, c):
         for p in pl:

@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-class ArrayElement(DisplayElement):
-    def __init__(self, 
-
 import pprint
 import pickle
 import sys
@@ -62,6 +59,8 @@ class MatchData:
     def make_ready(self):
         #self.m = build_matrix(self.lfile1, self.lfile2, weight_contrib, cachedir='/mnt/tmp')
         self.m = build_matrix(self.lfile1, self.lfile2, weight_contrib, cachedir=None)
+        #self.m = build_matrix(self.lfile1, self.lfile2, weight_contrib, cachedir=None)
+        #self.m = build_matrix(self.lfile1, self.lfile2, weight_contrib, cachedir=None)
         self.ready = True
 
     def set_display_panels(self, from_panel, to_panel, match_panel, extra_panel):

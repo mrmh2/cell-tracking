@@ -2,8 +2,10 @@
 
 import os
 import sys
+import math
 import timeit
 import pprint
+import itertools
 
 #import scipy
 #import scipy.misc
@@ -13,18 +15,62 @@ from pygame import surfarray
 
 import lnumbers
 
+class Coords2D():
+    def __init__(self, (x, y)):
+        self.x = x
+        self.y = y
+
+    def dist(self, other):
+        return abs(self - other)
+
+    def __abs__(self):
+        return math.sqrt(self.x * self.x + self.y * self.y)
+
+    def __repr__(self):
+        return "<Coords2D>: %d, %d" % (self.x, self.y)
+
+    def __sub__(self, other):
+        return Coords2D((self.x - other.x, self.y - other.y))
+    
+    def __add__(self, other):
+        return Coords2D((self.x + other.x, self.y + other.y))
+
+    def __mul__(self, other):
+        return Coords2D((self.x * other.x, self.y * other.y))
+
+    def __iter__(self):
+        return iter((self.x, self.y))
+
+    def astuple(self):
+        return self.x, self.y
+
 class Cell:
     def __init__(self, points_list):
         self.pl = points_list
+        self.lnumbers = None
+        self.ctroid = self.calc_centroid()
     
     def __iter__(self):
         return iter(self.pl)
+
 
     def __len__(self):
         return len(self.pl)
 
     def append(self, value):
         self.pl.append(value)
+
+    def centroid(self):
+        return self.ctroid
+
+    def calc_centroid(self):
+        xs, ys = zip(*self.pl)
+        x, y = sum(xs) / len(self.pl), sum(ys) / len(self.pl)
+        return Coords2D((x, y))
+
+    def set_lnumbers(self, ln):
+        self.lnumbers = ln
+        
 
 class CellData:
     def __init__(self, filename, lfile=None):
@@ -37,14 +83,29 @@ class CellData:
     def keys(self):
         return self.cd.keys()
 
+    def __iter__(self):
+        return self.cd.iteritems()
+
     def __getitem__(self, value):
         return self.cd[value]
+
+    def __delitem__(self, item):
+        del(self.cd[item])
 
     def read_l_numbers(self, filename):
         ln = lnumbers.parse_l_file(filename)
 
         for cid in ln:
-            self.cd[cid].lnumbers = ln[cid]
+            self[cid].set_lnumbers(ln[cid])
+
+    def get_lnumbers(self):
+        ld = {}
+        for (cid, cell) in self:
+            if self[cid].lnumbers is not None:
+                ld[cid] = self[cid].lnumbers
+
+        return ld
+            
         
 
 def cell_dict_from_file(image_file):
@@ -82,6 +143,8 @@ def cell_dict_from_file(image_file):
             if c not in cd: cd[c] = Cell([(x, y)])
             #if c not in cd: cd[c] = [(x, y)]
             else: cd[c].append((x, y))
+
+    del cd[0]
 
     return cd
 
@@ -125,17 +188,28 @@ def some_testing(image_file, l_file):
 
 def main():
     try:
-        image_file1 = sys.argv[1]
-        l_file = sys.argv[2]
+        #image_file1 = sys.argv[1]
+        #l_file = sys.argv[2]
+        expname = sys.argv[1]
+        tp = sys.argv[2]
     except IndexError:
-        print "Usage: %s image_file l_file" % os.path.basename(sys.argv[0])
+        print "Usage: %s experiment time_point" % os.path.basename(sys.argv[0])
         sys.exit(0)
 
-    celldata1 = CellData(image_file1, l_file)
+    sys.path.insert(0, '/Users/hartleym/local/python')
+    import get_data_files as gdf
 
-    print celldata1.keys()
+    d = gdf.get_data_files(expname, int(tp))
 
-    print celldata1[694].lnumbers
+    ifile = d['Segmented image']
+    lfile = d['L numbers']
+
+    print ifile, lfile
+
+    celldata = CellData(ifile, lfile)
+
+    for (cid, cell) in celldata:
+        print cid, cell.centroid()
 
 
 if __name__ == '__main__':

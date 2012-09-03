@@ -6,3 +6,4 @@ bin/*
 *.a
 *.pyc
 data
+unsorted-data
