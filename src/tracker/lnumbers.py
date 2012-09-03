@@ -38,7 +38,7 @@ def weight_contrib(ln, la, lb):
     return ln * pow(la - lb, 2)
 
 def smart_contrib(ln, la, lb):
-    if ln > 6: return 0
+    if ln > 8: return 0
     return ln * pow(la - lb, 2)
 
 def weighted_l_distance(lc1, lc2, comp_func):

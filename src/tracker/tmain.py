@@ -218,9 +218,10 @@ def main():
     ia1.onclick = ct.set_left
     ia2.onclick = ct.set_right
 
-    v = celldata.Coords2D((9, -38))
+    v = celldata.Coords2D((8, -36))
     mda.match_on_restricted_l(10, v)
-    mda.display_match(npa)
+    mda.display_match(ov1, ov2, npa)
+    print mda.get_average_v()
 
     #for x in range(50, 100):
     #    for y in range(50, 100):

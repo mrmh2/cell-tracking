@@ -38,6 +38,9 @@ class Coords2D():
     def __mul__(self, other):
         return Coords2D((self.x * other.x, self.y * other.y))
 
+    def __div__(self, other):
+        return Coords2D((self.x / other, self.y / other))
+
     def __iter__(self):
         return iter((self.x, self.y))
 

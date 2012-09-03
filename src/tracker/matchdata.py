@@ -3,11 +3,21 @@
 import os
 import sys
 import pprint
+import random
 
 import numpy as np
 
 import celldata
 import lnumbers
+
+def shades_of_jop():
+    c1 = random.randint(127, 255) 
+    c2 = random.randint(0, 127) 
+    c3 = random.randint(0, 255) 
+
+    #l = [c1, c2, c3]
+
+    return tuple(random.sample([c1, c2, c3], 3))
 
 def draw_single_vector(array, vfrom, vdisp):
     xf, yf = vfrom
@@ -28,6 +38,17 @@ def draw_single_vector(array, vfrom, vdisp):
         array[px, py+1] = c
 
 class MatchData():
+
+    def get_average_v(self):
+        vtot = celldata.Coords2D((0, 0))
+        for cidfrom, cidto in self.current_ml.iteritems():
+            cell_from = self.cdfrom[cidfrom]
+            cell_to = self.cdto[cidto]
+            centroid_from = cell_from.centroid()
+            centroid_to = cell_to.centroid()
+            vtot += centroid_to - centroid_from
+        return vtot / len(self.current_ml)
+            
     def match_on_restricted_l(self, d_max, v):
         ml = {}
         #cids = self.cdfrom
@@ -45,7 +66,7 @@ class MatchData():
                     ml[cid] = tocid
         self.current_ml = ml
 
-    def display_match(self, array=None):
+    def display_match(self, ovfrom, ovto, array=None):
         pprint.pprint(self.current_ml)
 
         if array is not None:
@@ -59,6 +80,9 @@ class MatchData():
                 vdisp = centroid_to - centroid_from
 
                 draw_single_vector(array, vfrom, vdisp)
+
+                ovfrom.plot_points(cell_from, cell_from.color)
+                ovto.plot_points(cell_to, cell_from.color)
 
         print "Total numbers of matches:", len(self.current_ml)
 
@@ -99,7 +123,10 @@ class MatchData():
         ld2 = self.cdto.get_lnumbers()
 
         self.build_centroid_array()
-        self.lmatrix = lnumbers.make_matrix(ld1, ld2, lnumbers.smart_contrib)
+        self.lmatrix = lnumbers.make_matrix(ld1, ld2, lnumbers.weight_contrib)
+
+        for cid, cell in celldata_from:
+            cell.color = shades_of_jop()
 
     def best_matches_on_l(self, cid, n):
         #print "matchdata.best_matches_on_l"
