@@ -1,0 +1,21 @@
+
+    def get_average_v(self):
+
+        displacements = [t.centroid() - f.centroid() for f, t in self.itermatches()]
+        pprint.pprint(displacements)
+
+        print sum(displacements, Coords2D((0, 0))) / len(displacements)
+        vtot = celldata.Coords2D((0, 0))
+        for cidfrom, cidto in self.current_ml.iteritems():
+            cell_from = self.cdfrom[cidfrom]
+            cell_to = self.cdto[cidto]
+            centroid_from = cell_from.centroid()
+            centroid_to = cell_to.centroid()
+            vtot += centroid_to - centroid_from
+        return vtot / len(self.current_ml)
+            
+    def match_on_restricted_l(self, d_max, v):
+        ml = {}
+        #cids = self.cdfrom
+        for cid, cell in self.cdfrom:
+            # TODO - error handling should be further down the stack

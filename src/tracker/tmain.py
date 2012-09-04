@@ -6,6 +6,7 @@ import sys
 import numpy as np
 import pygame
 import pygame.surfarray as surfarray
+import scipy.misc
 from pygame.locals import *
 
 import bb
@@ -38,7 +39,7 @@ class CompTracker():
         self.ov1.plot_points(self.cd1[cid], (255, 255, 255))
         print self.midov.array.shape
         self.midov.plot_points(self.cd1[cid], (255, 255, 255))
-        print "Set left to %d" % cid
+        print "Set left to %d, area %d, centroid %s" % (cid, self.leftcell.area, self.leftcell.centroid())
         print self.leftcell.lnumbers
         best_m = self.mda.best_matches_on_l(cid, 10)
 
@@ -52,7 +53,7 @@ class CompTracker():
 #
         fcent = self.mda.cdfrom[cid].centroid()
         adjusted_centroid = fcent + celldata.Coords2D((9, -38))
-        print "From ", adjusted_centroid
+        #print "From ", adjusted_centroid
         for cid, candidate in best_m:
             #candidate = self.mda.cdto[match_cid]
             d = adjusted_centroid.dist(candidate.centroid())
@@ -62,8 +63,8 @@ class CompTracker():
     def set_right(self, cid):
         self.rightcell = self.cd2[cid]
         self.ov2.plot_points(self.cd2[cid], (255, 255, 255))
-        print "Set right to %d" % cid
-        print self.rightcell.lnumbers
+        print "Set right to %d, area %d, centroid %s" % (cid, self.rightcell.area, self.rightcell.centroid())
+        #print self.rightcell.lnumbers
         self.comp()
 
     def comp(self):
@@ -110,7 +111,7 @@ def input_loop(events, scale, dmanager):
                 py = 100
             if event.key == 274:
                 py = -100
-            if event.key == 314:
+            if event.key == 314 or event.key == 96:
                 dmanager.key_input(314)
         elif event.type == MOUSEBUTTONDOWN:
             x, y = pygame.mouse.get_pos()
@@ -147,6 +148,8 @@ def main():
     image_file2 = d2[sf]
     l_file2 = d2['L numbers']
     proj_file2 = d2[of]
+
+    mdisplay = matchdisplay.MatchDisplay(image_file, image_file2, proj_file, proj_file2)
 
     #imgsurface = pygame.image.load(image_file)
     td = display.TrackerDisplay(xdim, ydim, caption_string)
@@ -203,6 +206,7 @@ def main():
     # until we fix the l number generation
     del(celldata1[1])
     celldata2 = celldata.CellData(image_file2, l_file2)
+    del(celldata2[1])
     mda = matchdata.MatchData(celldata1, celldata2)
     #ia1.onclick = overlay_highlighter(ov1, celldata1)
 
@@ -219,20 +223,34 @@ def main():
     ia2.onclick = ct.set_right
 
     v = celldata.Coords2D((8, -36))
-    mda.match_on_restricted_l(10, v)
-    mda.display_match(ov1, ov2, npa)
+    mda.set_displacement(v)
+    mda.match_on_restricted_l(7, v)
+    #mda.display_match(ov1, ov2, npa)
     print mda.get_average_v()
+    mda.match_with_displacement_field(10)
 
-    #for x in range(50, 100):
-    #    for y in range(50, 100):
-    #        npa[x, y] = 0, 0, 255
+    mdisplay.display_array = npa
+    mdisplay.mda = mda
+    mdisplay.ovfrom = ov1
+    mdisplay.ovto = ov2
+
+    mda.match_with_displacement_field(10)
+    mda.match_with_displacement_field(10)
+    #mdisplay.display_match(celldata.Coords2D((10, 10)))
+    mdisplay.display_match(v)
+    #mdisplay.display_match()
+
+    midov.save_to_png("mymatch.png")
+
+    delta_a = [float(cto.area) / float(cfrom.area) for cfrom, cto in mda.itermatches()]
+
+    print sum(delta_a) / len(delta_a)
 
     while True:
         scale, (pan_x, pan_y) = input_loop(pygame.event.get(), scale, dmanager)
         px += pan_x
         py += pan_y
         dmanager.update()
-        #dm.draw(screen)
 
 if __name__ == '__main__':
     main()

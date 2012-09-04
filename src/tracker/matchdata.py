@@ -8,6 +8,7 @@ import random
 import numpy as np
 
 import celldata
+from celldata import Coords2D
 import lnumbers
 
 def shades_of_jop():
@@ -39,15 +40,12 @@ def draw_single_vector(array, vfrom, vdisp):
 
 class MatchData():
 
+    def set_displacement(self, v):
+        self.displacement = v
+
     def get_average_v(self):
-        vtot = celldata.Coords2D((0, 0))
-        for cidfrom, cidto in self.current_ml.iteritems():
-            cell_from = self.cdfrom[cidfrom]
-            cell_to = self.cdto[cidto]
-            centroid_from = cell_from.centroid()
-            centroid_to = cell_to.centroid()
-            vtot += centroid_to - centroid_from
-        return vtot / len(self.current_ml)
+        displacements = [t.centroid() - f.centroid() for f, t in self.itermatches()]
+        return sum(displacements, Coords2D((0, 0))) / len(displacements)
             
     def match_on_restricted_l(self, d_max, v):
         ml = {}
@@ -55,7 +53,7 @@ class MatchData():
         for cid, cell in self.cdfrom:
             # TODO - error handling should be further down the stack
             try:
-                best_m = self.best_matches_on_l(cid, 10)
+                best_m = self.best_matches_on_l(cid, 15)
             except KeyError:
                 best_m = ([], []) 
             fcent = self.cdfrom[cid].centroid()
@@ -66,28 +64,85 @@ class MatchData():
                     ml[cid] = tocid
         self.current_ml = ml
 
-    def display_match(self, ovfrom, ovto, array=None):
-        pprint.pprint(self.current_ml)
+    def itermatches(self):
+        for cidfrom, cidto in self.current_ml.iteritems():
+            yield self.cdfrom[cidfrom], self.cdto[cidto]
 
-        if array is not None:
-            for cidfrom, cidto in self.current_ml.iteritems():
-                cell_from = self.cdfrom[cidfrom]
-                cell_to = self.cdto[cidto]
-                centroid_from = cell_from.centroid()
-                centroid_to = cell_to.centroid()
+    def update_displacement_array(self):
+        xdim, ydim = self.centroid_array.shape
+        self.displacement_array = np.empty([xdim, ydim], dtype=np.object)
+        posdisp = [(f.centroid(), t.centroid() - f.centroid()) for f, t in self.itermatches()]
+        for vpos, vdisp in posdisp:
+            x, y = vpos
+            self.displacement_array[x, y] = vdisp
+        self.hasdarray = True
 
-                vfrom = centroid_from
-                vdisp = centroid_to - centroid_from
+        #sys.exit(0)
+#        self.displacement_array = np.zeros([xdim, ydim, 2], dtype=np.int16)
+#        posdisp = [(f.centroid(), t.centroid() - f.centroid()) for f, t in self.itermatches()]
+#
+#        for vpos, vdisp in posdisp:
+#            x, y = vpos
+#            xd, yd = vdisp
+#            self.displacement_array[x, y] = (xd, yd)
 
-                draw_single_vector(array, vfrom, vdisp)
+    def get_displacement_a(self, p):
 
-                ovfrom.plot_points(cell_from, cell_from.color)
-                ovto.plot_points(cell_to, cell_from.color)
+        if not self.hasdarray:
+            return self.displacement
+        x, y = p
 
-        print "Total numbers of matches:", len(self.current_ml)
+        sr = 70
+
+        search_array = self.displacement_array[x-sr:x+sr, y-sr:y+sr]
+
+        values = search_array[np.nonzero(search_array)]
+        if len(values):
+            return sum(values, Coords2D((0, 0))) / len(values)
+        else:
+            return Coords2D((0, 0))
+
+    def match_with_displacement_field(self, d):
+        ml = {}
+
+        lm = 0.8
+        um = 1.3
+
+        for cid, fromcell in self.cdfrom:
+            fcent = fromcell.centroid()
+            #print "Attempting match for %d, at (%d, %d)" % (cid, fcent.x, fcent.y)
+            v = self.get_displacement_a(fcent)
+            #print "Local displacement is", v
+            cs = self.find_centroid(fromcell.centroid(), v, d)
+            if cs != -1:
+                candidate = self.cdto[cs]
+                #print "Areas:", fromcell.area, candidate.area
+                if candidate.area > lm * fromcell.area and candidate.area < um * fromcell.area:
+                    ml[cid] = cs
+    
+        self.current_ml = ml
+        self.update_displacement_array()
+
+#    def match_on_centroids_with_area(self, d):
+#        v = self.displacement
+#
+#        ml = {}
+#
+#        lm = 0.9
+#        um = 1.2
+#
+#        # TODO - should filter by area on a list, not best match (or worst, first)
+#        for cid, fromcell in self.cdfrom:
+#            cs = self.find_centroid(fromcell.centroid(), v, d)
+#            if cs != -1:
+#                candidate = self.cdto[cs]
+#                #print "Areas:", fromcell.area, candidate.area
+#                if candidate.area > lm * fromcell.area and candidate.area < um * fromcell.area:
+#                    ml[cid] = cs
+#
+#        self.current_ml = ml
 
     def build_centroid_array(self):
-        #for (cid, cell) in self.cdto:
         centroids = [cell.centroid().astuple() for cid, cell in self.cdto]
         xs, ys = zip(*centroids)
         xdim, ydim = max(xs) + 1, max(ys) + 1
@@ -95,9 +150,8 @@ class MatchData():
         for (cid, cell) in self.cdto:
             self.centroid_array[cell.centroid().astuple()] = cid
 
-    def find_centroid(self, p):
-        s = celldata.Coords2D((9, -38))
-        cs = self.find_centroids_in_region(p, s, 10)
+    def find_centroid(self, p, v, d):
+        cs = self.find_centroids_in_region(p, v, d)
 
         try:
             return cs[0]
@@ -111,7 +165,10 @@ class MatchData():
         #print "Slice around", sx, sy
         subarray = self.centroid_array[sx-sr:sx+sr, sy-sr:sy+sr]
         
-        cs = [x for x in np.nditer(subarray) if x != 0]
+        try:
+            cs = [int(x) for x in np.nditer(subarray) if x != 0]
+        except ValueError:
+            return []
 
         return cs
     
@@ -125,11 +182,12 @@ class MatchData():
         self.build_centroid_array()
         self.lmatrix = lnumbers.make_matrix(ld1, ld2, lnumbers.weight_contrib)
 
+        self.hasdarray = False
+
         for cid, cell in celldata_from:
             cell.color = shades_of_jop()
 
     def best_matches_on_l(self, cid, n):
-        #print "matchdata.best_matches_on_l"
         cids = lnumbers.best_matches(self.lmatrix[cid], n)
         candidates = [self.cdto[c] for c in cids]
         return zip(cids, candidates)

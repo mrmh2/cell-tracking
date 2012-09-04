@@ -1,5 +1,6 @@
 import sys
 
+import scipy.misc
 import numpy as np
 import pygame
 
@@ -26,6 +27,9 @@ class OverlayElement(DisplayElement):
         self.xdim, self.ydim = self.surface.get_size()
         print self.surface.get_size()
 
+    def toggle_visible(self):
+        pass
+
     def draw(self, display, bbox):
         pygame.surfarray.blit_array(self.surface, self.array)
         
@@ -37,6 +41,9 @@ class OverlayElement(DisplayElement):
             dbox = bb.BoundingBox((bbox.x, bbox.y), (bbox.xdim, int(aspect_ratio * bbox.xdim)))
 
         display.display_image(self.surface, dbox, rescale=True)
+
+    def save_to_png(self, filename):
+        scipy.misc.imsave(filename, self.array)
 
     def __setitem__(self, (x, y),  c):
         self.array[x, y] = c

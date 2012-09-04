@@ -6,6 +6,7 @@ import pprint
 import bb
 import lnumbers
 import celldata
+from celldata import Coords2D
 import matchdata
 
 def test_contains(myb, (x, y)):
@@ -68,6 +69,25 @@ def test_coords_2D():
 
     print p1.dist(p2)
 
+def test_single_match(md):
+    cid1 = 374
+    cid2 = 511
+    from_centroid = md.cdfrom[cid1].centroid()
+    to_centroid = md.cdto[cid2].centroid()
+    print "Centroid of left cell (cid %d):" % cid1, from_centroid
+    print "Centroid of right cell (cid %d):"% cid2, to_centroid
+    c = md.find_centroid(from_centroid, v, 10)
+    print "Centroid match is", c
+    v = from_centroid
+    # TODO - unit testize
+    print md.get_displacement_a(v), to_centroid - from_centroid
+
+    vn = from_centroid + Coords2D((10, 10))
+    print md.get_displacement_a(vn)
+
+
+
+
 def test_matchdata():
     ifile1 = 'data/newexp/segmented_image/T05.png'
     ifile2 = 'data/newexp/segmented_image/T06.png'
@@ -76,29 +96,37 @@ def test_matchdata():
 
     celldata1 = celldata.CellData(ifile1, lfile1)
     celldata2 = celldata.CellData(ifile2, lfile2)
+    del(celldata1[1])
+    del(celldata2[1])
 
     md = matchdata.MatchData(celldata1, celldata2)
 
-    cid1 = 374
-    cid2 = 511
+    v = celldata.Coords2D((8, -36))
+    md.match_on_restricted_l(8, v)
+    print "On l, matched:", len(md.current_ml)
+    md.set_displacement(v)
 
-    from_centroid = md.cdfrom[cid1].centroid()
-    to_centroid = md.cdto[cid2].centroid()
-    print "Centroid of left cell:", from_centroid
-    print "Centroid of right cell:", to_centroid
-    tx, ty = from_centroid.astuple()
-    #print md.centroid_array[tx, ty]
+    #md.match_on_centroids_with_area(7)
+    md.match_with_displacement_field(7)
+    print "Initial centroid + area: matched:", len(md.current_ml)
+    #pprint.pprint(md.current_ml)
 
-    c = md.find_centroid(from_centroid)
-    print "Centroid match is", c
+    md.match_with_displacement_field(10)
+    print "Local displacement: matched:", len(md.current_ml), "of", len(md.cdfrom)
+
+    md.match_with_displacement_field(10)
+    print "Local displacement: matched:", len(md.current_ml), "of", len(md.cdfrom)
+
+    md.match_with_displacement_field(10)
+    print "Local displacement: matched:", len(md.current_ml), "of", len(md.cdfrom)
 
 
 def main():
     #test_bb()
     #test_l()
-    test_l_match('newexp')
+    #test_l_match('newexp')
     #test_coords_2D()
-    #test_matchdata()
+    test_matchdata()
 
 if __name__ == '__main__':
     main()

@@ -17,8 +17,8 @@ import lnumbers
 
 class Coords2D():
     def __init__(self, (x, y)):
-        self.x = x
-        self.y = y
+        self.x = int(x)
+        self.y = int(y)
 
     def dist(self, other):
         return abs(self - other)
@@ -56,7 +56,6 @@ class Cell:
     def __iter__(self):
         return iter(self.pl)
 
-
     def __len__(self):
         return len(self.pl)
 
@@ -71,6 +70,9 @@ class Cell:
         x, y = sum(xs) / len(self.pl), sum(ys) / len(self.pl)
         return Coords2D((x, y))
 
+    def set_area(self):
+        self.area = len(self.pl)
+
     def set_lnumbers(self, ln):
         self.lnumbers = ln
         
@@ -82,6 +84,13 @@ class CellData:
 
         if lfile is not None:
             self.read_l_numbers(lfile)
+
+        for cid, cell in self:
+            cell.ctroid = cell.calc_centroid()
+            cell.set_area()
+
+    def __len__(self):
+        return len(self.cd)
 
     def keys(self):
         return self.cd.keys()
