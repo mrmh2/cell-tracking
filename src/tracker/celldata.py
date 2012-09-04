@@ -26,6 +26,12 @@ class Coords2D():
     def __abs__(self):
         return math.sqrt(self.x * self.x + self.y * self.y)
 
+    def __cmp__(self, other):
+        if self.x == other.x and self.y == other.y:
+            return 0
+        else:
+            return 1
+
     def __repr__(self):
         return "<Coords2D>: %d, %d" % (self.x, self.y)
 

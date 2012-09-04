@@ -120,6 +120,44 @@ def test_matchdata():
     md.match_with_displacement_field(10)
     print "Local displacement: matched:", len(md.current_ml), "of", len(md.cdfrom)
 
+    test_divide_tracker(md)
+
+def check_divide(md, cid, v):
+
+    ll = 0.8
+    ul = 1.2
+
+    xd, yd = v
+    to_cids = []
+    for x, y in md.cdfrom[cid]:
+        try:  
+            c = md.centroid_array[x + xd, y + yd]
+        except IndexError:
+            pass
+        if c != 0:
+            to_cids.append(c)
+
+    # TODO - consider all sets of 2
+    if len(to_cids) == 2:
+        fa = md.cdfrom[cid].area
+        ta = md.cdto[to_cids[0]].area + md.cdto[to_cids[1]].area
+        r = float(ta) / float(fa)
+        if r > ll and r < ul:
+            print "I think %d -> %d, %d" % (cid, to_cids[0], to_cids[1])
+
+    #i = md.iterunmatched()
+#
+#    for a in i:
+#        print a
+
+def test_divide_tracker(md):
+#    v = celldata.Coords2D((8, -36))
+
+ #   for cid, cell in md.iterunmatched():
+    # 172
+  #      md.check_divide(cid)
+    md.get_divided_cells()
+    pprint.pprint(md.divisions)
 
 def main():
     #test_bb()

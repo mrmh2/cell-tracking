@@ -16,8 +16,8 @@ class TrackerDisplay():
     def __init__(self, xdim, ydim, caption):
         pygame.init()
         vinfo = pygame.display.Info()
-        xdim = int(vinfo.current_w * 0.8)
-        ydim = int(vinfo.current_h * 0.8)
+        xdim = int(vinfo.current_w * 0.9)
+        ydim = int(vinfo.current_h * 0.9)
         self.window = pygame.display.set_mode((xdim, ydim))
         pygame.display.set_caption(caption)
         self.screen = pygame.display.get_surface()

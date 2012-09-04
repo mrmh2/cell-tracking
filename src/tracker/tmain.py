@@ -2,6 +2,7 @@
 
 import os
 import sys
+import pprint
 
 import numpy as np
 import pygame
@@ -42,6 +43,7 @@ class CompTracker():
         print "Set left to %d, area %d, centroid %s" % (cid, self.leftcell.area, self.leftcell.centroid())
         print self.leftcell.lnumbers
         best_m = self.mda.best_matches_on_l(cid, 10)
+        pprint.pprint(best_m)
 
 #        self.ov2.blank()
 #        for i in range(0, 10):
@@ -64,12 +66,13 @@ class CompTracker():
         self.rightcell = self.cd2[cid]
         self.ov2.plot_points(self.cd2[cid], (255, 255, 255))
         print "Set right to %d, area %d, centroid %s" % (cid, self.rightcell.area, self.rightcell.centroid())
-        #print self.rightcell.lnumbers
+        print self.rightcell.lnumbers
         self.comp()
 
     def comp(self):
         if self.leftcell and self.rightcell:
-            print lnumbers.weighted_l_distance(self.leftcell.lnumbers, self.rightcell.lnumbers, lnumbers.smart_contrib)
+            pass
+            #print lnumbers.weighted_l_distance(self.leftcell.lnumbers, self.rightcell.lnumbers, lnumbers.smart_contrib)
 
 def overlay_highlighter(ov, cd):
 
@@ -222,29 +225,71 @@ def main():
     ia1.onclick = ct.set_left
     ia2.onclick = ct.set_right
 
-    v = celldata.Coords2D((8, -36))
+    #start_ml = {
+    #            432: 698,
+    #            686: 1120,
+    #            585: 974,
+    #            739: 1186,
+    #            548: 924,
+    #            537: 913}
+
+    #5 -> 6
+    v = celldata.Coords2D((4, -38))
+    # 6 -> 7
+    #v = celldata.Coords2D((4, -13))
+    # 7 -> 8
+    #v = celldata.Coords2D((71, 42))
     mda.set_displacement(v)
+    #mda.current_ml = start_ml
+    #mda.update_displacement_array()
     mda.match_on_restricted_l(7, v)
     #mda.display_match(ov1, ov2, npa)
-    print mda.get_average_v()
-    mda.match_with_displacement_field(10)
 
     mdisplay.display_array = npa
     mdisplay.mda = mda
     mdisplay.ovfrom = ov1
     mdisplay.ovto = ov2
 
+    mda.lm = 0.95
+    mda.um = 1.2
+    mda.match_with_displacement_field(5)
+    mda.lm = 0.90
+    mda.um = 1.25
+    mda.match_with_displacement_field(6)
+    mda.lm = 0.85
+    mda.um = 1.3
+    mda.match_with_displacement_field(7)
+    mda.lm = 0.80
+    mda.um = 1.35
+    mda.match_with_displacement_field(8)
+    mda.match_with_displacement_field(9)
     mda.match_with_displacement_field(10)
     mda.match_with_displacement_field(10)
-    #mdisplay.display_match(celldata.Coords2D((10, 10)))
-    mdisplay.display_match(v)
+    print mda.get_average_v()
+    #mdisplay.display_match(v)
     #mdisplay.display_match()
 
-    midov.save_to_png("mymatch.png")
+    #midov.save_to_png("mymatch.png")
 
-    delta_a = [float(cto.area) / float(cfrom.area) for cfrom, cto in mda.itermatches()]
+    #delta_a = [float(cto.area) / float(cfrom.area) for cfrom, cto in mda.itermatches()]
 
-    print sum(delta_a) / len(delta_a)
+    #print sum(delta_a) / len(delta_a)
+
+    mda.get_divided_cells()
+    #pprint.pprint(mda.divisions)
+
+    for cfrom, cto in mda.itermatches():
+        ov1.plot_points(cfrom, (255, 255, 255))
+        ov2.plot_points(cto, (255, 255, 255))
+        
+
+    for fcid, tocids in mda.divisions.iteritems():
+    #    #print fcid, tocids
+        print "%d -> %d, %d" % (fcid, tocids[0], tocids[1])
+        print mda.cdfrom[fcid].color
+        ov1.plot_points(mda.cdfrom[fcid], mda.cdfrom[fcid].color)
+        ov2.plot_points(mda.cdto[tocids[0]], mda.cdfrom[fcid].color)
+        ov2.plot_points(mda.cdto[tocids[1]], mda.cdfrom[fcid].color)
 
     while True:
         scale, (pan_x, pan_y) = input_loop(pygame.event.get(), scale, dmanager)

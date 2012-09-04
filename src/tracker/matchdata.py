@@ -77,14 +77,53 @@ class MatchData():
             self.displacement_array[x, y] = vdisp
         self.hasdarray = True
 
-        #sys.exit(0)
-#        self.displacement_array = np.zeros([xdim, ydim, 2], dtype=np.int16)
-#        posdisp = [(f.centroid(), t.centroid() - f.centroid()) for f, t in self.itermatches()]
-#
-#        for vpos, vdisp in posdisp:
-#            x, y = vpos
-#            xd, yd = vdisp
-#            self.displacement_array[x, y] = (xd, yd)
+    def iterunmatched(self):
+        #for cid, cell in self.cdfrom:
+        #    if cid not in self.current_ml:
+        #        print cid
+
+        i = ((cid, cell) for cid, cell in self.cdfrom if cid not in self.current_ml)
+
+        return i
+
+    def check_divide(self, cid):
+    
+        ll = self.lm
+        ul = self.um
+    
+        xd, yd = self.displacement
+        to_cids = []
+        print "Testing for divide in %d" % cid
+        for x, y in self.cdfrom[cid]:
+            try:  
+                c = self.centroid_array[x + xd, y + yd]
+                if c != 0:
+                    print "Found a centroid - %d" % c
+                    to_cids.append(c)
+            except IndexError:
+                pass
+    
+        # TODO - consider all sets of 2
+        if len(to_cids) == 2:
+            print "Testing potential divide: %d > %d, %d" % (cid, to_cids[0], to_cids[1])
+            fa = self.cdfrom[cid].area
+            ta = self.cdto[to_cids[0]].area + self.cdto[to_cids[1]].area
+            r = float(ta) / float(fa)
+            print "Area ratio is %f" % r
+            if r > ll and r < ul:
+                #print "I think %d -> %d, %d" % (cid, to_cids[0], to_cids[1])
+                return to_cids
+
+        return []
+    
+    def get_divided_cells(self):
+        ml = {}
+        for cid, cell in self.iterunmatched():
+            d = self.check_divide(cid)
+            if len(d):
+                ml[cid] = d
+
+        self.divisions = ml
 
     def get_displacement_a(self, p):
 
@@ -92,7 +131,7 @@ class MatchData():
             return self.displacement
         x, y = p
 
-        sr = 70
+        sr = 100
 
         search_array = self.displacement_array[x-sr:x+sr, y-sr:y+sr]
 
@@ -105,20 +144,23 @@ class MatchData():
     def match_with_displacement_field(self, d):
         ml = {}
 
-        lm = 0.8
-        um = 1.3
+        lm = self.lm
+        um = self.um
+
+        zero = Coords2D((0, 0))
 
         for cid, fromcell in self.cdfrom:
             fcent = fromcell.centroid()
             #print "Attempting match for %d, at (%d, %d)" % (cid, fcent.x, fcent.y)
             v = self.get_displacement_a(fcent)
+            if v != zero:
             #print "Local displacement is", v
-            cs = self.find_centroid(fromcell.centroid(), v, d)
-            if cs != -1:
-                candidate = self.cdto[cs]
-                #print "Areas:", fromcell.area, candidate.area
-                if candidate.area > lm * fromcell.area and candidate.area < um * fromcell.area:
-                    ml[cid] = cs
+                cs = self.find_centroid(fromcell.centroid(), v, d)
+                if cs != -1:
+                    candidate = self.cdto[cs]
+                    #print "Areas:", fromcell.area, candidate.area
+                    if candidate.area > lm * fromcell.area and candidate.area < um * fromcell.area:
+                        ml[cid] = cs
     
         self.current_ml = ml
         self.update_displacement_array()
@@ -183,6 +225,9 @@ class MatchData():
         self.lmatrix = lnumbers.make_matrix(ld1, ld2, lnumbers.weight_contrib)
 
         self.hasdarray = False
+
+        self.lm = 0.8
+        self.um = 1.3
 
         for cid, cell in celldata_from:
             cell.color = shades_of_jop()
