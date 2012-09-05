@@ -8,7 +8,9 @@ import intarray
 import display
 import bb
 
-class DisplayElement():
+   
+
+class DisplayElement(object):
     def __init__(self):
         pass
 
@@ -18,6 +20,33 @@ class DisplayElement():
     def mouse_input(self, p, button):
         pass
         #print "Base method"
+
+class TextBoxElement(DisplayElement):
+
+    def __init__(self):
+        self.font = pygame.font.Font(None, 20)
+        self.tbuffer = ["Loading..."]
+        self.xdim = 300
+        self.ydim = 200
+        self.surface = pygame.Surface((self.xdim, self.ydim))
+        self.surface.set_colorkey((0, 0, 0))
+
+    def draw(self, display, bbox):
+        self.surface.fill(1)
+        ypos = 0
+        for text in reversed(self.tbuffer):
+            c = 255 - 2 * ypos
+            self.label = self.font.render(text, 1, (c, c, c))
+            self.surface.blit(self.label, (0, ypos))
+            ypos += 20
+
+        display.display_image(self.surface, bbox, rescale=False)
+
+    def add_text(self, text):
+        self.tbuffer.append(text)
+        if len(self.tbuffer) > 4:
+            del(self.tbuffer[0])
+ 
 
 class OverlayElement(DisplayElement):
     def __init__(self, array):

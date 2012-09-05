@@ -65,13 +65,14 @@ def shiftit(pl, v):
     return [(x + xd, y + yd) for (x, y) in pl]
 
 class CompTracker():
-    def __init__(self, ov1, ov2, mda, midov):
+    def __init__(self, ov1, ov2, mda, midov, tleft):
         self.ov1 = ov1
         self.ov2 = ov2
         self.cd1 = mda.cdfrom
         self.cd2 = mda.cdto
         self.mda = mda
         self.midov = midov
+        self.tleft = tleft
 
         self.leftcell = None
         self.rightcell = None
@@ -86,6 +87,7 @@ class CompTracker():
         self.midov.plot_points(self.cd1[cid], (255, 255, 255))
         print self.leftcell.lnumbers
         best_m = self.mda.best_matches_on_l(cid, 10)
+        self.tleft.add_text("Cell %d" % cid)
 
 #        self.ov2.blank()
 #        for i in range(0, 10):
@@ -179,14 +181,24 @@ class MatchDisplay():
         ov1, ia1 = self.create_image_with_overlay(bbox, image_file, proj_file)
         ov2, ia2 = self.create_image_with_overlay(bbox2, image_file2, proj_file2)
 
-        print ov1.xdim, ov1.ydim
-
         npaxdim = max(ov1.xdim, ov2.xdim)
         npaydim = max(ov2.ydim, ov2.ydim)
 
+        tbbox = bb.BoundingBox((0, 0), (200, 100))
+        self.tleft = self.create_text_box(tbbox)
+        self.tleft.add_text("Loaded %d cells" % len(self.mda.cdfrom))
+
+        tbbox = bb.BoundingBox((xdim/3, 0), (200, 100))
+        self.tmid = self.create_text_box(tbbox)
+        self.tmid.add_text("Starting match...")
+
+        tbbox = bb.BoundingBox((2 * xdim/3, 0), (200, 100))
+        self.tright = self.create_text_box(tbbox)
+        self.tright.add_text("Loaded %d cells" % len(self.mda.cdto))
+
         self.create_central_overlay(bbox3, npaxdim, npaydim)
 
-        ct = CompTracker(ov1, ov2, self.mda, self.midov)
+        ct = CompTracker(ov1, ov2, self.mda, self.midov, self.tleft)
         ia1.onclick = ct.set_left
         ia2.onclick = ct.set_right
 
@@ -195,6 +207,14 @@ class MatchDisplay():
 
     def update(self):
         self.dmanager.update()
+
+    def create_text_box(self, tbbox):
+        da = dm.DisplayArea(tbbox)
+        te = dm.TextBoxElement()
+        da.add_element(te)
+        self.dmanager.add_area(da)
+
+        return te
 
     def create_central_overlay(self, bbox, xdim, ydim):
         da = dm.DisplayArea(bbox)
@@ -230,6 +250,8 @@ class MatchDisplay():
             draw_single_vector(array, vfrom, vdisp - vd)
             for cellto in cellsto:
                 self.ovto.plot_points(cellto, cellfrom.color)
+
+        self.tmid.add_text("Found %d matches" % len(self.mda.current_ml))
 
         self.dmanager.update()
     
