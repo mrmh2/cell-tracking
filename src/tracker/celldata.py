@@ -57,7 +57,8 @@ class Cell:
     def __init__(self, points_list):
         self.pl = points_list
         self.lnumbers = None
-        self.ctroid = self.calc_centroid()
+        if len(self.pl):
+            self.ctroid = self.calc_centroid()
     
     def __iter__(self):
         return iter(self.pl)
@@ -71,6 +72,9 @@ class Cell:
     def centroid(self):
         return self.ctroid
 
+    def update_centroid(self):
+        self.ctroid = self.calc_centroid()
+
     def calc_centroid(self):
         xs, ys = zip(*self.pl)
         x, y = sum(xs) / len(self.pl), sum(ys) / len(self.pl)
@@ -81,7 +85,11 @@ class Cell:
 
     def set_lnumbers(self, ln):
         self.lnumbers = ln
-        
+
+    def __add__(self, other):
+        tpl = list(self.pl) + list(other.pl)
+        return Cell(tpl)
+
 
 class CellData:
     def __init__(self, filename, lfile=None):
@@ -165,33 +173,6 @@ def cell_dict_from_file(image_file):
     del cd[0]
 
     return cd
-
-class OldCellData:
-    def __init__(self, filename, sx, sy, cachedir='/mnt/tmp'):
-        self.cd = cell_dict_from_file(filename, sx, sy)
-
-    def set_disp_panel(self, disp_panel):
-        self.disp_panel = disp_panel
-
-    def highlight_cell(self, cid, col, array=None):
-        if array is None:
-            try: 
-                array = self.disp_panel.array
-            except AttributeError:
-                print "ERROR: No array to display to in highlight_cell"
-                sys.exit(2)
-        c = rgb_to_comp(col)
-        for x, y in self.cd[cid]:
-            array[x, y] = c
-
-    def relative_rep(self, cid):
-        ox, oy = get_centroid(self.cd[cid])
-
-        npl = []
-        for x, y in self.cd[cid]:
-            npl.append((x - ox, y - oy))
-
-        return npl
 
 def some_testing(image_file, l_file):
     sx = 1

@@ -150,6 +150,26 @@ def check_divide(md, cid, v):
 #    for a in i:
 #        print a
 
+def test_centroid_summer():
+    ifile = 'data/newexp/segmented_image/T05.png'
+    cd = celldata.CellData(ifile)
+
+    cells = [cd[150], cd[151], cd[152]]
+
+    for c in cells:
+        print c.centroid()
+
+    #print cells[0].pl + cells[1].pl
+
+    tpl = sum([c.pl for c in cells], [])
+    xs, ys = zip(*tpl)
+    x, y = sum(xs) / len(tpl), sum(ys) / len(tpl)
+    print Coords2D((x, y))
+
+    #newcell = cells[0] + cells[1] + cells[2]
+    newcell = sum(cells, celldata.Cell([]))
+    print newcell.centroid()
+
 def test_divide_tracker(md):
 #    v = celldata.Coords2D((8, -36))
 
@@ -159,12 +179,20 @@ def test_divide_tracker(md):
     md.get_divided_cells()
     pprint.pprint(md.divisions)
 
+def test_smarter_centroid():
+    ifile = 'data/newexp/segmented_image/T05.png'
+    cd = celldata.CellData(ifile)
+
+    print cd[150].centroid
+
 def main():
     #test_bb()
     #test_l()
     #test_l_match('newexp')
     #test_coords_2D()
-    test_matchdata()
+    #test_matchdata()
+    #test_centroid_summer()
+    test_smarter_centroid()
 
 if __name__ == '__main__':
     main()
