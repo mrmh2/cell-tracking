@@ -69,6 +69,7 @@ class Cell:
     def append(self, value):
         self.pl.append(value)
 
+    @property
     def centroid(self):
         return self.ctroid
 
@@ -89,6 +90,8 @@ class Cell:
     def __add__(self, other):
         tpl = list(self.pl) + list(other.pl)
         return Cell(tpl)
+
+    #centroid = property(get_centroid)
 
 
 class CellData:

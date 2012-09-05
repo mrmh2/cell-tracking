@@ -26,7 +26,7 @@ class MatchData():
         self.displacement = v
 
     def get_average_v(self):
-        displacements = [ts[0].centroid() - f.centroid() for f, ts in self.itermatches()]
+        displacements = [ts[0].centroid - f.centroid for f, ts in self.itermatches()]
         return sum(displacements, Coords2D((0, 0))) / len(displacements)
             
     def match_on_restricted_l(self, d_max, v):
@@ -38,10 +38,10 @@ class MatchData():
                 best_m = self.best_matches_on_l(cid, 15)
             except KeyError:
                 best_m = ([], []) 
-            fcent = self.cdfrom[cid].centroid()
+            fcent = self.cdfrom[cid].centroid
             adjusted_centroid = fcent + v
             for tocid, candidate in best_m:
-                d = adjusted_centroid.dist(candidate.centroid())
+                d = adjusted_centroid.dist(candidate.centroid)
                 if d < d_max:
                     ml[cid] = [tocid]
         self.current_ml = ml
@@ -56,7 +56,7 @@ class MatchData():
         self.displacement_array = np.empty([xdim, ydim], dtype=np.object)
         #centroids = [(f.centroid
         # TODO - betetr, but now a bit loing
-        posdisp = [(f.centroid(), sum(ts, celldata.Cell([])).centroid() - f.centroid()) 
+        posdisp = [(f.centroid, sum(ts, celldata.Cell([])).centroid - f.centroid) 
                     for f, ts in self.itermatches()]
         #for fcell, tcells in self.itermatches():
              
@@ -138,12 +138,12 @@ class MatchData():
         zero = Coords2D((0, 0))
 
         for cid, fromcell in self.cdfrom:
-            fcent = fromcell.centroid()
+            fcent = fromcell.centroid
             #print "Attempting match for %d, at (%d, %d)" % (cid, fcent.x, fcent.y)
             v = self.get_displacement_a(fcent)
             if v != zero:
             #print "Local displacement is", v
-                cs = self.find_centroid(fromcell.centroid(), v, d)
+                cs = self.find_centroid(fromcell.centroid, v, d)
                 if cs != -1:
                     candidate = self.cdto[cs]
                     #print "Areas:", fromcell.area, candidate.area
@@ -154,12 +154,12 @@ class MatchData():
         self.update_displacement_array()
 
     def build_centroid_array(self):
-        centroids = [cell.centroid().astuple() for cid, cell in self.cdto]
+        centroids = [cell.centroid.astuple() for cid, cell in self.cdto]
         xs, ys = zip(*centroids)
         xdim, ydim = max(xs) + 1, max(ys) + 1
         self.centroid_array = np.zeros([xdim, ydim], dtype=np.uint32)
         for (cid, cell) in self.cdto:
-            self.centroid_array[cell.centroid().astuple()] = cid
+            self.centroid_array[cell.centroid.astuple()] = cid
 
     def find_centroid(self, p, v, d):
         cs = self.find_centroids_in_region(p, v, d)

@@ -59,10 +59,10 @@ class CompTracker():
 
     def set_left(self, cid):
         self.leftcell = self.cd1[cid]
-        print "Set left to %d, area %d, centroid %s" % (cid, self.leftcell.area, self.leftcell.centroid())
+        print "Set left to %d, area %d, centroid %s" % (cid, self.leftcell.area, self.leftcell.centroid)
         self.ov1.plot_points(self.cd1[cid], (255, 255, 255))
         v = Coords2D((4, -38))
-        v = self.mda.get_displacement_a(self.leftcell.centroid())
+        v = self.mda.get_displacement_a(self.leftcell.centroid)
         self.ov2.plot_points(shiftit(border_list(self.cd1[cid]), v), (255, 255, 255))
         print self.midov.array.shape
         self.midov.plot_points(self.cd1[cid], (255, 255, 255))
@@ -78,19 +78,19 @@ class CompTracker():
 #        self.midov.plot_points(candidate, (255, 0, 0))
 #        self.comp()
 #
-        fcent = self.mda.cdfrom[cid].centroid()
+        fcent = self.mda.cdfrom[cid].centroid
         adjusted_centroid = fcent + celldata.Coords2D((9, -38))
         #print "From ", adjusted_centroid
         for cid, candidate in best_m:
             #candidate = self.mda.cdto[match_cid]
-            d = adjusted_centroid.dist(candidate.centroid())
+            d = adjusted_centroid.dist(candidate.centroid)
             if d < 10:
                 self.ov2.plot_points(candidate, (255, 255, 255))
 
     def set_right(self, cid):
         self.rightcell = self.cd2[cid]
         self.ov2.plot_points(self.cd2[cid], (255, 255, 255))
-        print "Set right to %d, area %d, centroid %s" % (cid, self.rightcell.area, self.rightcell.centroid())
+        print "Set right to %d, area %d, centroid %s" % (cid, self.rightcell.area, self.rightcell.centroid)
         print self.rightcell.lnumbers
         self.comp()
 

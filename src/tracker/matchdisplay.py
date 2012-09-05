@@ -32,9 +32,9 @@ class MatchDisplay():
         array = self.display_array
 
         for cellfrom, cellsto in self.mda.itermatches():
-            vfrom = cellfrom.centroid()
+            vfrom = cellfrom.centroid
             self.ovfrom.plot_points(cellfrom, cellfrom.color)
-            centroid_to = sum([cellto for cellto in cellsto], celldata.Cell([])).centroid()
+            centroid_to = sum([cellto for cellto in cellsto], celldata.Cell([])).centroid
             vdisp = centroid_to - vfrom
             draw_single_vector(array, vfrom, vdisp - vd)
             for cellto in cellsto:
