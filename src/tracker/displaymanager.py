@@ -25,10 +25,8 @@ class OverlayElement(DisplayElement):
         self.surface = pygame.surfarray.make_surface(array)
         self.surface.set_colorkey((0, 0, 0))
         self.xdim, self.ydim = self.surface.get_size()
-        print self.surface.get_size()
-
-    def toggle_visible(self):
-        pass
+        self.visible = True
+        print "OverlayElemented initialised with size", self.surface.get_size()
 
     def draw(self, display, bbox):
         pygame.surfarray.blit_array(self.surface, self.array)
@@ -40,7 +38,8 @@ class OverlayElement(DisplayElement):
             aspect_ratio = float(self.ydim) / float(self.xdim)
             dbox = bb.BoundingBox((bbox.x, bbox.y), (bbox.xdim, int(aspect_ratio * bbox.xdim)))
 
-        display.display_image(self.surface, dbox, rescale=True)
+        if self.visible:
+            display.display_image(self.surface, dbox, rescale=True)
 
     def save_to_png(self, filename):
         scipy.misc.imsave(filename, self.array)

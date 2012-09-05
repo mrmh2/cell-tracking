@@ -20,31 +20,13 @@ def shades_of_jop():
 
     return tuple(random.sample([c1, c2, c3], 3))
 
-def draw_single_vector(array, vfrom, vdisp):
-    xf, yf = vfrom
-    vx, vy = vdisp
-
-    step = int(abs(vdisp))
-
-    for i in range(0, step):
-        r = i * 255
-        g = 0
-        b =  255 - (i * 255 / step)
-        c = (r, g, b)
-        px, py = xf + i * vx / step, yf + i * vy / step
-        array[px, py] = c
-        array[px-1, py] = c
-        array[px+1, py] = c
-        array[px, py-1] = c
-        array[px, py+1] = c
-
 class MatchData():
 
     def set_displacement(self, v):
         self.displacement = v
 
     def get_average_v(self):
-        displacements = [t.centroid() - f.centroid() for f, t in self.itermatches()]
+        displacements = [ts[0].centroid() - f.centroid() for f, ts in self.itermatches()]
         return sum(displacements, Coords2D((0, 0))) / len(displacements)
             
     def match_on_restricted_l(self, d_max, v):
@@ -61,27 +43,29 @@ class MatchData():
             for tocid, candidate in best_m:
                 d = adjusted_centroid.dist(candidate.centroid())
                 if d < d_max:
-                    ml[cid] = tocid
+                    ml[cid] = [tocid]
         self.current_ml = ml
 
     def itermatches(self):
-        for cidfrom, cidto in self.current_ml.iteritems():
-            yield self.cdfrom[cidfrom], self.cdto[cidto]
+        for cidfrom, cidsto in self.current_ml.iteritems():
+            cellsto = [self.cdto[cidto] for cidto in cidsto]
+            yield self.cdfrom[cidfrom], cellsto
 
     def update_displacement_array(self):
         xdim, ydim = self.centroid_array.shape
         self.displacement_array = np.empty([xdim, ydim], dtype=np.object)
-        posdisp = [(f.centroid(), t.centroid() - f.centroid()) for f, t in self.itermatches()]
+        #centroids = [(f.centroid
+        # TODO - anything but this
+        posdisp = [(f.centroid(), ts[0].centroid() - f.centroid()) for f, ts in self.itermatches()]
+        #for fcell, tcells in self.itermatches():
+             
+
         for vpos, vdisp in posdisp:
             x, y = vpos
             self.displacement_array[x, y] = vdisp
         self.hasdarray = True
 
     def iterunmatched(self):
-        #for cid, cell in self.cdfrom:
-        #    if cid not in self.current_ml:
-        #        print cid
-
         i = ((cid, cell) for cid, cell in self.cdfrom if cid not in self.current_ml)
 
         return i
@@ -104,10 +88,12 @@ class MatchData():
                 pass
     
         # TODO - consider all sets of 2
-        if len(to_cids) == 2:
-            print "Testing potential divide: %d > %d, %d" % (cid, to_cids[0], to_cids[1])
+        if len(to_cids) > 1:
+            #print "Testing potential divide: %d > %d, %d" % (cid, to_cids[0], to_cids[1])
+            print "Testing divide: %d ->" % cid, to_cids
             fa = self.cdfrom[cid].area
-            ta = self.cdto[to_cids[0]].area + self.cdto[to_cids[1]].area
+            ta = sum([self.cdto[tocid].area for tocid in to_cids])
+            #ta = self.cdto[to_cids[0]].area + self.cdto[to_cids[1]].area
             r = float(ta) / float(fa)
             print "Area ratio is %f" % r
             if r > ll and r < ul:
@@ -124,6 +110,7 @@ class MatchData():
                 ml[cid] = d
 
         self.divisions = ml
+        self.current_ml.update(ml)
 
     def get_displacement_a(self, p):
 
@@ -160,29 +147,10 @@ class MatchData():
                     candidate = self.cdto[cs]
                     #print "Areas:", fromcell.area, candidate.area
                     if candidate.area > lm * fromcell.area and candidate.area < um * fromcell.area:
-                        ml[cid] = cs
+                        ml[cid] = [cs]
     
         self.current_ml = ml
         self.update_displacement_array()
-
-#    def match_on_centroids_with_area(self, d):
-#        v = self.displacement
-#
-#        ml = {}
-#
-#        lm = 0.9
-#        um = 1.2
-#
-#        # TODO - should filter by area on a list, not best match (or worst, first)
-#        for cid, fromcell in self.cdfrom:
-#            cs = self.find_centroid(fromcell.centroid(), v, d)
-#            if cs != -1:
-#                candidate = self.cdto[cs]
-#                #print "Areas:", fromcell.area, candidate.area
-#                if candidate.area > lm * fromcell.area and candidate.area < um * fromcell.area:
-#                    ml[cid] = cs
-#
-#        self.current_ml = ml
 
     def build_centroid_array(self):
         centroids = [cell.centroid().astuple() for cid, cell in self.cdto]

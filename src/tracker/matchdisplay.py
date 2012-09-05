@@ -33,17 +33,19 @@ class MatchDisplay():
         ml = self.mda.current_ml
 
         # TODO - nicenise this interface
-        for cidfrom, cidto in ml.iteritems():
+        for cidfrom, cidsto in ml.iteritems():
             cell_from = self.mda.cdfrom[cidfrom]
-            cell_to = self.mda.cdto[cidto]
             centroid_from = cell_from.centroid()
-            centroid_to = cell_to.centroid()
-
-            vfrom = centroid_from
-            vdisp = centroid_to - centroid_from
-
-            draw_single_vector(array, vfrom, vdisp - vd)
-
             self.ovfrom.plot_points(cell_from, cell_from.color)
-            self.ovto.plot_points(cell_to, cell_from.color)
+
+            for cidto in cidsto:
+                cell_to = self.mda.cdto[cidto]
+                centroid_to = cell_to.centroid()
+
+                vfrom = centroid_from
+                vdisp = centroid_to - centroid_from
+
+                draw_single_vector(array, vfrom, vdisp - vd)
+
+                self.ovto.plot_points(cell_to, cell_from.color)
 

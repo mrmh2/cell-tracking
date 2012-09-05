@@ -1,6 +1,6 @@
 def aval_to_cid(val):
     g, b, r = (val >> 8) % 256, (val >> 16) % 256, (val >> 0) % 256
-    r, b, = b, r
+    #r, b, = b, r
     return (r << 16) + (g << 8) + (b << 0)
 
 class InteractorArray:
