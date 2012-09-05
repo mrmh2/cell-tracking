@@ -112,6 +112,7 @@ class MatchData():
 
         self.divisions = ml
         self.current_ml.update(ml)
+        self.update_displacement_array()
 
     def get_displacement_a(self, p):
 

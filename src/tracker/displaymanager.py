@@ -140,7 +140,8 @@ class DisplayManager():
         if keyval == 314:
             for a in self.dareas:
                 for e in a.delements:
-                    e.toggle_visible()
+                    if isinstance(e, ImageElement):
+                        e.toggle_visible()
 
     def update(self):
         for da in self.dareas:
