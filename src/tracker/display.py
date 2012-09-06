@@ -24,11 +24,15 @@ class TrackerDisplay():
         self.xdim = xdim
         self.ydim = ydim
 
-    def display_image(self, imgsurface, bbox, rescale=False):
+    def display_image(self, imgsurface, bbox, rescale=False, blank=False):
         #nbox = bb.BoundingBox((bbox.xdim * 2, bbox.ydim * 2), (bbox.x, bbox.y))
         #myr = pygame.Rect(500, 500, bbox.xdim, bbox.ydim)
         #bbox.xdim = 1200
         #bbox.ydim = 2000
+
+        if blank:
+            self.screen.fill(0, (bbox.x, bbox.y, bbox.xdim, bbox.ydim))
+
         if rescale:
             tempsurface = pygame.transform.scale(imgsurface, (bbox.xdim, bbox.ydim))
             #tempsurface = pygame.transform.scale(imgsurface, (nbox.xdim, nbox.ydim))

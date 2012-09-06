@@ -13,25 +13,30 @@ import matchdata
 class MatchAlgorithm(object):
     # Generate inital guess at displacement vector somehow - use l numbers for guidance
 
-    def __init__(self, mda, mdisplay=None):
+    def __init__(self, mda, tp, mdisplay=None):
         self.mda = mda
         if mdisplay is not None:
             self.mdisplay = mdisplay
 
+        self.tp = tp
+
     def run(self):
         mda = self.mda
         mdisplay = self.mdisplay
-        v = celldata.Coords2D((4, -38))
+        if self.tp == 5:
+            v = celldata.Coords2D((4, -38))
+            mda.set_displacement(v)
+            mda.match_on_restricted_l(7, v)
+            mdisplay.display_match(v)
+        elif self.tp == 6:
+            v = celldata.Coords2D((4, -13))
+            mda.set_displacement(v)
         #v = celldata.Coords2D((1, 1))
         # 6 -> 7
-        #v = celldata.Coords2D((4, -13))
         # 7 -> 8
         #v = celldata.Coords2D((71, 42))
-        mda.set_displacement(v)
         #mda.current_ml = start_ml
         #mda.update_displacement_array()
-        mda.match_on_restricted_l(7, v)
-        mdisplay.display_match(v)
         #mda.display_match(ov1, ov2, npa)
     
         mda.lm = 0.95
@@ -103,7 +108,7 @@ def main():
     mdisplay = matchdisplay.MatchDisplay(ifile1, ifile2, pfile1, pfile2, mda)
     mdisplay.update()
 
-    mymatch = MatchAlgorithm(mda, mdisplay)
+    mymatch = MatchAlgorithm(mda, tp, mdisplay)
     mymatch.run()
 
      #start_ml = {

@@ -32,7 +32,7 @@ class TextBoxElement(DisplayElement):
         self.surface.set_colorkey((0, 0, 0))
 
     def draw(self, display, bbox):
-        self.surface.fill(1)
+        self.surface.fill(0)
         ypos = 0
         for text in reversed(self.tbuffer):
             c = 255 - 2 * ypos
@@ -49,16 +49,16 @@ class TextBoxElement(DisplayElement):
  
 
 class OverlayElement(DisplayElement):
-    def __init__(self, array):
+    def __init__(self, array, blank=False):
         self.array = array
         self.surface = pygame.surfarray.make_surface(array)
         self.surface.set_colorkey((0, 0, 0))
         self.xdim, self.ydim = self.surface.get_size()
         self.visible = True
-        print "OverlayElemented initialised with size", self.surface.get_size()
+        self.blank = blank
+        print "OverlayElement initialised with size", self.surface.get_size()
 
     def draw(self, display, bbox):
-        pygame.surfarray.blit_array(self.surface, self.array)
         
         if self.ydim > self.xdim:
             aspect_ratio = float(self.xdim) / float(self.ydim)
@@ -68,7 +68,8 @@ class OverlayElement(DisplayElement):
             dbox = bb.BoundingBox((bbox.x, bbox.y), (bbox.xdim, int(aspect_ratio * bbox.xdim)))
 
         if self.visible:
-            display.display_image(self.surface, dbox, rescale=True)
+            pygame.surfarray.blit_array(self.surface, self.array)
+            display.display_image(self.surface, dbox, rescale=True, blank=self.blank)
 
     def save_to_png(self, filename):
         scipy.misc.imsave(filename, self.array)

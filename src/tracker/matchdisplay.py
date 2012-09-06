@@ -188,15 +188,15 @@ class MatchDisplay():
         self.tleft = self.create_text_box(tbbox)
         self.tleft.add_text("Loaded %d cells" % len(self.mda.cdfrom))
 
-        tbbox = bb.BoundingBox((xdim/3, 0), (200, 100))
-        self.tmid = self.create_text_box(tbbox)
-        self.tmid.add_text("Starting match...")
-
         tbbox = bb.BoundingBox((2 * xdim/3, 0), (200, 100))
         self.tright = self.create_text_box(tbbox)
         self.tright.add_text("Loaded %d cells" % len(self.mda.cdto))
 
         self.create_central_overlay(bbox3, npaxdim, npaydim)
+
+        tbbox = bb.BoundingBox((xdim/3, 0), (200, 100))
+        self.tmid = self.create_text_box(tbbox)
+        self.tmid.add_text("Starting match...")
 
         ct = CompTracker(ov1, ov2, self.mda, self.midov, self.tleft)
         ia1.onclick = ct.set_left
@@ -219,7 +219,7 @@ class MatchDisplay():
     def create_central_overlay(self, bbox, xdim, ydim):
         da = dm.DisplayArea(bbox)
         npa = np.zeros([xdim, ydim, 3], dtype=np.int8)
-        midov = dm.OverlayElement(npa)
+        midov = dm.OverlayElement(npa, blank=True)
         da.add_element(midov)
         self.dmanager.add_area(da)
         self.midov = midov
