@@ -127,6 +127,10 @@ class ImageElement(DisplayElement):
         print self.imgsurface.get_size()
         print self.imgarray.shape
 
+    @property
+    def shifts(self):
+        return self.imgsurface.get_shifts()
+
 
 class DisplayArea:
     def __init__(self, bbox):

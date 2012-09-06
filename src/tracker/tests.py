@@ -198,8 +198,9 @@ def ptest():
     print screen.get_masks()
     ifile = 'data/newexp/segmented_image/T05.png'
     imgsurface = pygame.image.load(ifile)
-    print imgsurface.get_masks()
  
+    print imgsurface.get_masks()
+    print imgsurface.get_shifts()
     
 
 def main():

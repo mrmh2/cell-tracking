@@ -137,8 +137,6 @@ def make_matcher(md, ov):
 def testfunc(cid):
     print "Sproink!", cid
 
-
-
 def draw_single_vector(array, vfrom, vdisp):
     xf, yf = vfrom
     vx, vy = vdisp
@@ -230,7 +228,7 @@ class MatchDisplay():
         #xdim1, ydim1 = de.xdim, de.ydim
         de2 = dm.ImageElement(ifile2, array=False)
         de2.visible = False
-        de.iarray = intarray.InteractorArray(de.imgarray) 
+        de.iarray = intarray.InteractorArray(de.imgarray, de.shifts) 
         da.add_element(de)
         da.add_element(de2)
         ov = de.generate_overlay()
