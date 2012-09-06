@@ -3,6 +3,8 @@
 import sys
 import pprint
 
+import pygame
+
 import bb
 import lnumbers
 import celldata
@@ -185,6 +187,21 @@ def test_smarter_centroid():
 
     print cd[150].centroid
 
+def ptest():
+    pygame.init()
+    vinfo = pygame.display.Info()
+    xdim = int(vinfo.current_w * 0.9)
+    ydim = int(vinfo.current_h * 0.9)
+    window = pygame.display.set_mode((xdim, ydim))
+    pygame.display.set_caption("test")
+    screen = pygame.display.get_surface()
+    print screen.get_masks()
+    ifile = 'data/newexp/segmented_image/T05.png'
+    imgsurface = pygame.image.load(ifile)
+    print imgsurface.get_masks()
+ 
+    
+
 def main():
     #test_bb()
     #test_l()
@@ -192,7 +209,8 @@ def main():
     #test_coords_2D()
     #test_matchdata()
     #test_centroid_summer()
-    test_smarter_centroid()
+    #test_smarter_centroid()
+    ptest()
 
 if __name__ == '__main__':
     main()
