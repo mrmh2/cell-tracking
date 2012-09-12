@@ -8,8 +8,6 @@ import intarray
 import display
 import bb
 
-   
-
 class DisplayElement(object):
     def __init__(self):
         pass
@@ -59,13 +57,15 @@ class OverlayElement(DisplayElement):
         print "OverlayElement initialised with size", self.surface.get_size()
 
     def draw(self, display, bbox):
+
+        s, dbox = get_scale_and_box(self.xdim, self.ydim, bbox)
         
-        if self.ydim > self.xdim:
-            aspect_ratio = float(self.xdim) / float(self.ydim)
-            dbox = bb.BoundingBox((bbox.x, bbox.y), (int(aspect_ratio * bbox.ydim), bbox.ydim))
-        else:
-            aspect_ratio = float(self.ydim) / float(self.xdim)
-            dbox = bb.BoundingBox((bbox.x, bbox.y), (bbox.xdim, int(aspect_ratio * bbox.xdim)))
+        #if self.ydim > self.xdim:
+        #    aspect_ratio = float(self.xdim) / float(self.ydim)
+        #    dbox = bb.BoundingBox((bbox.x, bbox.y), (int(aspect_ratio * bbox.ydim), bbox.ydim))
+        #else:
+        #    aspect_ratio = float(self.ydim) / float(self.xdim)
+        #    dbox = bb.BoundingBox((bbox.x, bbox.y), (bbox.xdim, int(aspect_ratio * bbox.xdim)))
 
         if self.visible:
             pygame.surfarray.blit_array(self.surface, self.array)
@@ -86,6 +86,17 @@ class OverlayElement(DisplayElement):
             x, y = p
             self[x, y] = c
 
+def get_scale_and_box(xdim, ydim, bbox):
+    sx = float(bbox.xdim) / float(xdim)
+    sy = float(bbox.ydim) / float(ydim)
+
+    s = min(sx, sy)
+
+    nxdim = int(s * xdim)
+    nydim = int(s * ydim)
+
+    return s, bb.BoundingBox((bbox.x, bbox.y), (nxdim, nydim))
+
 class ImageElement(DisplayElement):
     def __init__(self, filename, array=True):
         self.imgsurface = pygame.image.load(filename)
@@ -102,12 +113,13 @@ class ImageElement(DisplayElement):
         return OverlayElement(npa)
 
     def draw(self, display, bbox):
-        self.cmult = max(float(self.xdim) / float(bbox.xdim), float(self.ydim) / float(bbox.ydim))
+
+        s, dbox = get_scale_and_box(self.xdim, self.ydim, bbox)
 
         if self.visible:
-            aspect_ratio = float(self.xdim) / float(self.ydim)
-            dbox = bb.BoundingBox((bbox.x, bbox.y), (int(aspect_ratio * bbox.ydim), bbox.ydim))
             display.display_image(self.imgsurface, dbox, rescale=True)
+    
+        self.cmult =  1 / s
 
     def mouse_input(self, p, button):
         x, y = p

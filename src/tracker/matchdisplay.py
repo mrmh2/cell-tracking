@@ -12,36 +12,10 @@ from celldata import Coords2D
 import display
 import intarray
 
-def input_loop(events, scale, dmanager):
-
-    px, py = 0, 0
-
-    for event in events:
-        if event.type == QUIT:
-            sys.exit(0)
-        elif event.type == KEYDOWN:
-            print event.key
-            if event.key == 45:
-                scale = 0.9 * scale
-            if event.key == 61:
-                scale = scale / 0.9
-            if event.key == 275:
-                px = -100
-            if event.key == 276:
-                px = 100
-            if event.key == 273:
-                py = 100
-            if event.key == 274:
-                py = -100
-            if event.key == 314 or event.key == 96:
-                dmanager.key_input(314)
-        elif event.type == MOUSEBUTTONDOWN:
-            x, y = pygame.mouse.get_pos()
-            dmanager.mouse_input((x, y), event.button)
-
-    pan = (px, py)
-
-    return scale, pan
+def save_matchlist(ml):
+    with open('matchlist.txt', 'w') as f:
+        for k, v in ml.iteritems():
+            f.write("%d: %s\n" % (k, v))
 
 def is_border(x, y, pl):
     xoffsets = [-1, 0, 1]
@@ -77,17 +51,23 @@ class CompTracker():
         self.leftcell = None
         self.rightcell = None
 
+        self.center = Coords2D((352, 436))
+        self.v = Coords2D((14, 37))
+
+        self.mlex = {}
+
     def set_left(self, cid):
         self.leftcell = self.cd1[cid]
+        self.leftcid = cid
         print "Set left to %d, area %d, centroid %s" % (cid, self.leftcell.area, self.leftcell.centroid)
         self.ov1.plot_points(self.cd1[cid], (255, 255, 255))
         v = Coords2D((4, -38))
         v = self.mda.get_displacement_a(self.leftcell.centroid)
-        self.ov2.plot_points(shiftit(border_list(self.cd1[cid]), v), (255, 255, 255))
-        self.midov.plot_points(self.cd1[cid], (255, 255, 255))
+        #self.ov2.plot_points(shiftit(border_list(self.cd1[cid]), v), (255, 255, 255))
+        #self.midov.plot_points(self.cd1[cid], (255, 255, 255))
         print self.leftcell.lnumbers
-        best_m = self.mda.best_matches_on_l(cid, 10)
-        self.tleft.add_text("Cell %d" % cid)
+        #best_m = self.mda.best_matches_on_l(cid, 10)
+        self.tleft.add_text("Cell %d, centroid %s" % (cid, self.leftcell.centroid))
 
 #        self.ov2.blank()
 #        for i in range(0, 10):
@@ -100,14 +80,15 @@ class CompTracker():
         fcent = self.mda.cdfrom[cid].centroid
         adjusted_centroid = fcent + celldata.Coords2D((9, -38))
         #print "From ", adjusted_centroid
-        for cid, candidate in best_m:
-            #candidate = self.mda.cdto[match_cid]
-            d = adjusted_centroid.dist(candidate.centroid)
-            if d < 10:
-                self.ov2.plot_points(candidate, (255, 255, 255))
+        #for cid, candidate in best_m:
+        #    #candidate = self.mda.cdto[match_cid]
+        #    d = adjusted_centroid.dist(candidate.centroid)
+        #    if d < 10:
+        #        self.ov2.plot_points(candidate, (255, 255, 255))
 
     def set_right(self, cid):
         self.rightcell = self.cd2[cid]
+        self.rightcid = cid
         self.ov2.plot_points(self.cd2[cid], (255, 255, 255))
         print "Set right to %d, area %d, centroid %s" % (cid, self.rightcell.area, self.rightcell.centroid)
         print self.rightcell.lnumbers
@@ -115,7 +96,54 @@ class CompTracker():
 
     def comp(self):
         if self.leftcell and self.rightcell:
+            print "Left cell centroid:", self.leftcell.centroid
+            print "Right cell centroid:", self.rightcell.centroid
+            vdisp = self.center - self.leftcell.centroid
+            print vdisp, abs(vdisp)
+            vd = (self.rightcell.centroid - self.leftcell.centroid) - self.v
+            print vd, abs(vd)
+
+            print vdisp / -6
+            
             pass
+
+    def input_loop(self, events, scale, dmanager):
+    
+        px, py = 0, 0
+    
+        for event in events:
+            if event.type == QUIT:
+                sys.exit(0)
+            elif event.type == KEYDOWN:
+                print event.key
+                if event.unicode == 'm':
+                    print self.leftcid, ":", self.rightcid
+                    self.mlex[self.leftcid] = [[self.rightcid]]
+                if event.unicode == 's':
+                    save_matchlist(self.mdisp.mda.current_ml)
+                if event.key == 45:
+                    scale = 0.9 * scale
+                if event.key == 61:
+                    scale = scale / 0.9
+                if event.key == 275:
+                    px = -100
+                if event.key == 276:
+                    px = 100
+                if event.key == 273:
+                    py = 100
+                if event.key == 274:
+                    py = -100
+                if event.key == 314 or event.key == 96:
+                    dmanager.key_input(314)
+            elif event.type == MOUSEBUTTONDOWN:
+                x, y = pygame.mouse.get_pos()
+                dmanager.mouse_input((x, y), event.button)
+    
+        pan = (px, py)
+    
+        return scale, pan
+    
+
             #print lnumbers.weighted_l_distance(self.leftcell.lnumbers, self.rightcell.lnumbers, lnumbers.smart_contrib)
 
 def overlay_highlighter(ov, cd):
@@ -185,10 +213,14 @@ class MatchDisplay():
         tbbox = bb.BoundingBox((0, 0), (200, 100))
         self.tleft = self.create_text_box(tbbox)
         self.tleft.add_text("Loaded %d cells" % len(self.mda.cdfrom))
+        lx, ly, _ = ov1.array.shape
+        self.tleft.add_text("Image is %dx%d" % (lx, ly))
 
         tbbox = bb.BoundingBox((2 * xdim/3, 0), (200, 100))
         self.tright = self.create_text_box(tbbox)
         self.tright.add_text("Loaded %d cells" % len(self.mda.cdto))
+        rx, ry, _ = ov2.array.shape
+        self.tright.add_text("Image is %dx%d" % (rx, ry))
 
         self.create_central_overlay(bbox3, npaxdim, npaydim)
 
@@ -199,6 +231,8 @@ class MatchDisplay():
         ct = CompTracker(ov1, ov2, self.mda, self.midov, self.tleft)
         ia1.onclick = ct.set_left
         ia2.onclick = ct.set_right
+        self.ct = ct
+        self.ct.mdisp = self
 
         self.ovfrom = ov1
         self.ovto = ov2
@@ -251,6 +285,22 @@ class MatchDisplay():
 
         self.tmid.add_text("Found %d matches" % len(self.mda.current_ml))
 
+        lcx, lcy = self.mda.cdfrom.center
+        c = 255, 255, 255
+        self.ovfrom.array[lcx+0, lcy+0] = c
+        self.ovfrom.array[lcx+1, lcy+0] = c
+        self.ovfrom.array[lcx-1, lcy+0] = c
+        self.ovfrom.array[lcx+0, lcy+1] = c
+        self.ovfrom.array[lcx+0, lcy-1] = c
+
+        rcx, rcy = self.mda.cdto.center
+        c = 255, 255, 255
+        self.ovto.array[rcx+0, rcy+0] = c
+        self.ovto.array[rcx+1, rcy+0] = c
+        self.ovto.array[rcx-1, rcy+0] = c
+        self.ovto.array[rcx+0, rcy+1] = c
+        self.ovto.array[rcx+0, rcy-1] = c
+
         self.dmanager.update()
     
     def display_divisions(self):
@@ -273,7 +323,7 @@ class MatchDisplay():
         scale = 1
         px, py = 0, 0
         while True:
-            scale, (pan_x, pan_y) = input_loop(pygame.event.get(), scale, self.dmanager)
+            scale, (pan_x, pan_y) = self.ct.input_loop(pygame.event.get(), scale, self.dmanager)
             px += pan_x
             py += pan_y
             self.update()

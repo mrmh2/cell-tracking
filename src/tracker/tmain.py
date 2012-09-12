@@ -23,6 +23,10 @@ class MatchAlgorithm(object):
     def run(self):
         mda = self.mda
         mdisplay = self.mdisplay
+        if self.tp == 0:
+            v = celldata.Coords2D((-18, -8))
+            #v = celldata.Coords2D((14, 37))
+            mda.set_displacement(v)
         if self.tp == 5:
             v = celldata.Coords2D((4, -38))
             mda.set_displacement(v)
@@ -74,19 +78,27 @@ def load_data(expname, names):
     pprint.pprint(d)
 
     dlist = [d[k] for k in sorted_nicely(d.keys())]
-    return [[a[n] for n in names] for a in dlist]
+    # This is now something of a list incomprehension
+    return [[a[n] for n in names if n in a] for a in dlist]
 
 def matchdata_from_exp_and_tp(expname, tp):
-    names = ['Segmented image', 'L numbers', 'Projection']
+    #names = ['Segmented image', 'L numbers', 'Projection']
+    names = ['New segmented image', 'L numbers', 'Gaussian projection']
     expdata = load_data(expname, names)
     ifile1, lfile1, pfile1 = expdata[tp]
     ifile2, lfile2, pfile2 = expdata[tp + 1]
   
-    celldata1 = celldata.CellData(ifile1, lfile1)
+    celldata1 = celldata.CellData(ifile1)
+    celldata2 = celldata.CellData(ifile2)
+
+    #celldata1 = celldata.CellData(ifile1, lfile1)
+    #celldata2 = celldata.CellData(ifile2, lfile2)
     # until we fix the l number generation
-    del(celldata1[1])
-    celldata2 = celldata.CellData(ifile2, lfile2)
-    del(celldata2[1])
+    try:
+        del(celldata1[1])
+        del(celldata2[1])
+    except KeyError:
+        pass
     mda = matchdata.MatchData(celldata1, celldata2)
 
     return mda
@@ -99,7 +111,8 @@ def main():
         print "Usage: %s experiment time_point" % os.path.basename(sys.argv[0])
         sys.exit(0)
 
-    names = ['Segmented image', 'L numbers', 'Projection']
+    #names = ['Segmented image', 'L numbers', 'Projection']
+    names = ['New segmented image', 'L numbers', 'Gaussian projection']
     expdata = load_data(expname, names)
     ifile1, lfile1, pfile1 = expdata[tp]
     ifile2, lfile2, pfile2 = expdata[tp + 1]

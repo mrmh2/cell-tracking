@@ -106,6 +106,17 @@ class CellData:
             cell.ctroid = cell.calc_centroid()
             cell.set_area()
 
+    @property
+    def center(self):
+        allpl = [c.pl for c in self.cells]
+        myl = list(itertools.chain.from_iterable(allpl))
+        xs, ys = zip(*myl)
+        return sum(xs) / len(xs), sum(ys) / len(ys)
+
+    @property
+    def cells(self):
+        return self.cd.values()
+
     def __len__(self):
         return len(self.cd)
 

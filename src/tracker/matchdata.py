@@ -130,6 +130,10 @@ class MatchData():
         else:
             return Coords2D((0, 0))
 
+    def get_displacement_i(self, p):
+        vd = p - Coords2D((352, 436))
+    
+
     def match_with_displacement_field(self, d):
         ml = {}
 

@@ -2,6 +2,7 @@
 
 import sys
 import pprint
+import itertools
 
 import pygame
 
@@ -172,6 +173,27 @@ def test_centroid_summer():
     newcell = sum(cells, celldata.Cell([]))
     print newcell.centroid()
 
+def test_overall_centroid():
+    ifile = 'data/newexp/segmented_image/T00.png'
+    ifile2 = 'data/newexp/segmented_image/T01.png'
+    cd = celldata.CellData(ifile)
+    cd2 = celldata.CellData(ifile2)
+    print "Loaded celldata"
+    sys.stdout.flush()
+
+    #all = sum(cd.cells, celldata.Cell([]))
+
+    #allpl = [c.pl for c in cd.cells]
+
+    #myl = list(itertools.chain.from_iterable(allpl))
+
+    #xs, ys = zip(*myl)
+
+    #print sum(xs) / len(xs), sum(ys) / len(ys)
+    print cd.center
+    print cd2.center
+
+
 def test_divide_tracker(md):
 #    v = celldata.Coords2D((8, -36))
 
@@ -211,7 +233,8 @@ def main():
     #test_matchdata()
     #test_centroid_summer()
     #test_smarter_centroid()
-    ptest()
+    #ptest()
+    test_overall_centroid()
 
 if __name__ == '__main__':
     main()
