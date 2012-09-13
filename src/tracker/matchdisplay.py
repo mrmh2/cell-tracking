@@ -190,7 +190,8 @@ class MatchDisplay():
                     image_file2,
                     proj_file,
                     proj_file2,
-                    matchdata):
+                    matchdata,
+                    scale=(1,1)):
 
         self.mda = matchdata
 
@@ -205,7 +206,7 @@ class MatchDisplay():
         bbox3 = bb.BoundingBox((xdim/3, 0), (xdim/3, ydim))
 
         ov1, ia1 = self.create_image_with_overlay(bbox, image_file, proj_file)
-        ov2, ia2 = self.create_image_with_overlay(bbox2, image_file2, proj_file2)
+        ov2, ia2 = self.create_image_with_overlay(bbox2, image_file2, proj_file2, scale=scale)
 
         npaxdim = max(ov1.xdim, ov2.xdim)
         npaydim = max(ov2.ydim, ov2.ydim)
@@ -259,11 +260,11 @@ class MatchDisplay():
         self.dmanager.add_area(da)
         self.midov = midov
  
-    def create_image_with_overlay(self, bbox, ifile1, ifile2):
+    def create_image_with_overlay(self, bbox, ifile1, ifile2, scale=(1,1)):
         da = dm.DisplayArea(bbox)
-        de = dm.ImageElement(ifile1)
+        de = dm.ImageElement(ifile1, scale=scale)
         #xdim1, ydim1 = de.xdim, de.ydim
-        de2 = dm.ImageElement(ifile2, array=False)
+        de2 = dm.ImageElement(ifile2, scale=scale, array=False)
         de2.visible = False
         de.iarray = intarray.InteractorArray(de.imgarray, de.shifts) 
         da.add_element(de)
@@ -276,7 +277,9 @@ class MatchDisplay():
 
     def display_match(self, vd=celldata.Coords2D((0, 0))):
         self.tmid.add_text("Updating, v=%s" % vd)
-        self.update()
+        self.ovfrom.blank()
+        self.ovto.blank()
+        self.midov.blank()
         array = self.midov.array
         for cellfrom, cellsto in self.mda.itermatches():
             #print cellfrom.centroid, cellsto[0].centroid
@@ -306,7 +309,7 @@ class MatchDisplay():
 #        self.ovto.array[rcx+0, rcy+1] = c
 #        self.ovto.array[rcx+0, rcy-1] = c
 
-        self.dmanager.update()
+        self.update()
     
     def display_divisions(self):
         ov1 = self.ovfrom
@@ -347,4 +350,16 @@ class MatchDisplay():
         if cell in self.mda.cdto.cells:
             self.ovto.plot_points(cell, c)
 
+    def plot_some_shit(self, vd):
+        self.midov.blank()
+
+        #center = Coords2D((320, 470))
+        #vd = Coords2D((56, 55))
+        for cell, csto in self.mda.itermatches():
+            pred_vdisp = self.mda.iso_vdisp(cell.centroid)
+            #draw_single_vector(self.midov.array, cell.centroid, vdisp)
+            vdisp = csto[0].centroid - cell.centroid
+            draw_single_vector(self.midov.array, cell.centroid, vdisp - pred_vdisp)
+
+        self.update()
         

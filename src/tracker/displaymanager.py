@@ -53,7 +53,7 @@ class OverlayElement(DisplayElement):
         self.surface.set_colorkey((0, 0, 0))
         self.xdim, self.ydim = self.surface.get_size()
         self.visible = True
-        self.blank = blank
+        self.shouldblank = blank
         print "OverlayElement initialised with size", self.surface.get_size()
 
     def draw(self, display, bbox):
@@ -69,7 +69,7 @@ class OverlayElement(DisplayElement):
 
         if self.visible:
             pygame.surfarray.blit_array(self.surface, self.array)
-            display.display_image(self.surface, dbox, rescale=True, blank=self.blank)
+            display.display_image(self.surface, dbox, rescale=True, blank=self.shouldblank)
 
     def save_to_png(self, filename):
         scipy.misc.imsave(filename, self.array)
@@ -99,8 +99,12 @@ def get_scale_and_box(xdim, ydim, bbox):
     return s, bb.BoundingBox((bbox.x, bbox.y), (nxdim, nydim))
 
 class ImageElement(DisplayElement):
-    def __init__(self, filename, array=True):
+    def __init__(self, filename, array=True, scale=(1,1)):
+        sx, sy = scale
         self.imgsurface = pygame.image.load(filename)
+        self.xdim, self.ydim = self.imgsurface.get_size()
+        self.imgsurface = pygame.transform.scale(self.imgsurface, 
+            (int(sx * self.xdim), int(sy * self.ydim)))
         self.xdim, self.ydim = self.imgsurface.get_size()
         self.visible = True
         if array:

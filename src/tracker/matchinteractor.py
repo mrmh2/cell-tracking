@@ -54,7 +54,7 @@ class MatchInteractor():
         #v = self.mda.get_displacement_a(self.leftcell.centroid)
         #self.ov2.plot_points(shiftit(border_list(self.cd1[cid]), v), (255, 255, 255))
         #self.midov.plot_points(self.cd1[cid], (255, 255, 255))
-            #self.comp()
+            self.comp()
 
     def set_right(self, cid):
         try:
@@ -73,18 +73,18 @@ class MatchInteractor():
             print "Set right to %d, area %d, centroid %s" % (cid, cell.area, cell.centroid)
             self.tright.add_text("Cell %d, area %d, centroid %s" % (cid, cell.area, cell.centroid))
             self.mdisplay.highlight_cell(cell)
-            #self.comp()
+            self.comp()
 
     def comp(self):
-        if self.leftcell and self.rightcell:
-            print "Left cell centroid:", self.leftcell.centroid
-            print "Right cell centroid:", self.rightcell.centroid
+        if self.leftcell and len(self.rightcells):
+            #print "Left cell centroid:", self.leftcell.centroid
+            #print "Right cell centroid:", self.rightcell.centroid
             vdisp = self.center - self.leftcell.centroid
-            print vdisp, abs(vdisp)
-            vd = (self.rightcell.centroid - self.leftcell.centroid) - self.v
-            print vd, abs(vd)
+            #print vdisp, abs(vdisp)
+            #vd = (self.rightcell.centroid - self.leftcell.centroid) - self.v
+            #print vd, abs(vd)
 
-            print vdisp / -6
+            #print vdisp / -6
             
     def input_loop(self, events, scale, dmanager):
     
@@ -102,6 +102,10 @@ class MatchInteractor():
                     self.mdisplay.display_single_match(self.leftcid)
                     self.leftcid = None
                     self.rightcids = []
+                if event.unicode == ']':
+                    self.mdisplay.plot_some_shit(self.mdisplay.mda.get_average_v())
+                if event.unicode == 'p':
+                    self.mdisplay.mda.print_match_stats()
                 if event.unicode == 's':
                     self.mdisplay.mda.save_matchlist('matchdata.txt')
                 if event.unicode == 'u':
@@ -110,6 +114,12 @@ class MatchInteractor():
                     self.mdisplay.mda.lm = 0.60
                     self.mdisplay.mda.um = 1.1
                     self.mdisplay.mda.stage_1_hinted_match(5)
+                    self.mdisplay.display_match(self.mdisplay.mda.get_average_v())
+                if event.unicode == '2':
+                    self.mdisplay.mda.stage_2_hinted_match(7)
+                    self.mdisplay.display_match(self.mdisplay.mda.get_average_v())
+                if event.unicode == '3':
+                    self.mdisplay.mda.stage_3_hinted_match(7)
                     self.mdisplay.display_match(self.mdisplay.mda.get_average_v())
                 if event.key == 45:
                     scale = 0.9 * scale

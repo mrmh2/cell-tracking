@@ -95,8 +95,8 @@ class Cell:
 
 
 class CellData:
-    def __init__(self, filename, lfile=None):
-        cd = cell_dict_from_file(filename)
+    def __init__(self, filename, lfile=None, scale=(1,1)):
+        cd = cell_dict_from_file(filename, scale)
         self.cd = cd
 
         if lfile is not None:
@@ -148,10 +148,14 @@ class CellData:
             
         
 
-def cell_dict_from_file(image_file):
+def cell_dict_from_file(image_file, scale):
     """Take a numpy array containing values that represent segmentation ID, and return a
     dictionary keyed by the ID containing a list of points in absolute coordinates which
     comprise that cell"""
+
+    sx, sy = scale
+
+    print "Scaling", sx, sy
 
     try:
         imgsurface = pygame.image.load(image_file)
@@ -160,6 +164,8 @@ def cell_dict_from_file(image_file):
         print e
         sys.exit(2)
 
+    xdim, ydim = imgsurface.get_size()
+    imgsurface = pygame.transform.scale(imgsurface, (int(sx * xdim), int(sy * ydim)))
     xdim, ydim = imgsurface.get_size()
     imgarray = surfarray.array2d(imgsurface)
     rs, gs, bs, ra = imgsurface.get_shifts()

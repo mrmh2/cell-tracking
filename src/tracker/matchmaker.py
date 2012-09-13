@@ -4,6 +4,7 @@ import re
 import os
 import sys
 import pprint
+import ConfigParser
 
 import celldata
 from celldata import Coords2D
@@ -27,15 +28,29 @@ def load_data(expname, names):
     # This is now something of a list incomprehension
     return [[a[n] for n in names if n in a] for a in dlist]
 
+def get_voxel_spacing(filename):
+
+    config = ConfigParser.SafeConfigParser()
+    config.read(filename)
+    sname = 'Microscope data'
+    
+    vx = float(config.get(sname, 'voxel size x'))
+    vy = float(config.get(sname, 'voxel size y'))
+    vz = float(config.get(sname, 'voxel size z'))
+
+    return vx, vy, vz
+
 def matchdata_from_exp_and_tp(expname, tp, names):
-    #names = ['Segmented image', 'L numbers', 'Projection']
-    #names = ['New segmented image', 'L numbers', 'Gaussian projection']
     expdata = load_data(expname, names)
-    ifile1, lfile1, pfile1 = expdata[tp]
-    ifile2, lfile2, pfile2 = expdata[tp + 1]
+    ifile1, lfile1, pfile1, vfile1 = expdata[tp]
+    ifile2, lfile2, pfile2, vfile2 = expdata[tp + 1]
+
+    sx1, sy1, sz1 = get_voxel_spacing(vfile1)
+    sx2, sy2, sz2 = get_voxel_spacing(vfile2)
   
     celldata1 = celldata.CellData(ifile1)
-    celldata2 = celldata.CellData(ifile2)
+    celldata2 = celldata.CellData(ifile2, scale=(sx2/sy1, sy2/sy1))
+    #celldata2 = celldata.CellData(ifile2)
 
     #celldata1 = celldata.CellData(ifile1, lfile1)
     #celldata2 = celldata.CellData(ifile2, lfile2)
@@ -57,17 +72,23 @@ def main():
         print "Usage: %s experiment time_point" % os.path.basename(sys.argv[0])
         sys.exit(0)
 
-    names = ['Segmented image', 'L numbers', 'Projection']
+    names = ['Segmented image', 'L numbers', 'Projection', 'Microscope metadata']
     #names = ['New segmented image', 'L numbers', 'Gaussian projection']
     expdata = load_data(expname, names)
-    ifile1, lfile1, pfile1 = expdata[tp]
-    ifile2, lfile2, pfile2 = expdata[tp + 1]
- 
+    ifile1, lfile1, pfile1, vfile1 = expdata[tp]
+    ifile2, lfile2, pfile2, vfile2 = expdata[tp + 1]
+
+    sx1, sy1, sz1 = get_voxel_spacing(vfile1)
+    sx2, sy2, sz2 = get_voxel_spacing(vfile2)
+
+    mname = 'T%02dT%02d.match' % (tp, tp + 1)
+
     mda = matchdata_from_exp_and_tp(expname, tp, names)
-    mdisplay = matchdisplay.MatchDisplay(ifile1, ifile2, pfile1, pfile2, mda)
+    mdisplay = matchdisplay.MatchDisplay(ifile1, ifile2, pfile1, pfile2, mda, 
+        scale=(sx2/sx1, sy2/sy1))
     mint = matchinteractor.MatchInteractor(mdisplay)
 
-    ml = read_ml('T01T02.match')
+    ml = read_ml(mname)
     mda.current_ml = ml
     v = mda.get_average_v()
     mdisplay.display_match(v)

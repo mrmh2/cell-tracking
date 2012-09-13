@@ -31,9 +31,11 @@ class MatchData():
         self.displacement = v
 
     def get_average_v(self):
-        print "Av", self.current_ml
         displacements = [ts[0].centroid - f.centroid for f, ts in self.itermatches()]
-        return sum(displacements, Coords2D((0, 0))) / len(displacements)
+        if len(displacements):
+            return sum(displacements, Coords2D((0, 0))) / len(displacements)
+        else:
+            return Coords2D((0, 0))
             
     def match_on_restricted_l(self, d_max, v):
         ml = {}
@@ -58,6 +60,7 @@ class MatchData():
             yield self.cdfrom[cidfrom], cellsto
 
     def update_displacement_array(self):
+        print "Centroid array", self.centroid_array.shape
         xdim, ydim = self.centroid_array.shape
         self.displacement_array = np.empty([xdim, ydim], dtype=np.object)
         #centroids = [(f.centroid
@@ -65,11 +68,13 @@ class MatchData():
         posdisp = [(f.centroid, sum(ts, celldata.Cell([])).centroid - f.centroid) 
                     for f, ts in self.itermatches()]
         #for fcell, tcells in self.itermatches():
-             
 
         for vpos, vdisp in posdisp:
             x, y = vpos
-            self.displacement_array[x, y] = vdisp
+            try:
+                self.displacement_array[x, y] = vdisp - self.iso_vdisp(vpos)
+            except IndexError:
+                pass
         self.hasdarray = True
 
     def iterunmatched(self):
@@ -82,10 +87,11 @@ class MatchData():
         ll = self.lm
         ul = self.um
     
-        xd, yd = self.displacement
         to_cids = []
+        xd, yd = self.get_average_v()
         print "Testing for divide in %d" % cid
         for x, y in self.cdfrom[cid]:
+            #xd, yd = self.get_displacement_a((x, y))
             try:  
                 c = self.centroid_array[x + xd, y + yd]
                 if c != 0:
@@ -164,9 +170,84 @@ class MatchData():
         self.current_ml = ml
         self.update_displacement_array()
 
+    def match_with_iso(self, d):
+        ml = {}
+
+        lm = self.lm
+        um = self.um
+
+        zero = Coords2D((0, 0))
+
+        for cid, fromcell in self.cdfrom:
+            fcent = fromcell.centroid
+            v = self.iso_vdisp(fcent)
+            #print "Local displacement is", v
+            cs = self.find_centroid(fromcell.centroid, v, d)
+            if cs != -1:
+                candidate = self.cdto[cs]
+                print "Areas:", fromcell.area, candidate.area
+                if candidate.area > lm * fromcell.area and candidate.area < um * fromcell.area:
+                    ml[cid] = [cs]
+    
+        self.current_ml = ml
+        self.update_displacement_array()
+
+    def match_with_smarty_iso(self, d):
+        ml = {}
+
+        lm = self.lm
+        um = self.um
+
+        zero = Coords2D((0, 0))
+
+        for cid, fromcell in self.cdfrom:
+            fcent = fromcell.centroid
+            v = self.iso_vdisp(fcent) + self.get_displacement_a(fcent)
+            #print "Local displacement is", v
+            cs = self.find_centroid(fromcell.centroid, v, d)
+            if cs != -1:
+                candidate = self.cdto[cs]
+                print "Areas:", fromcell.area, candidate.area
+                if candidate.area > lm * fromcell.area and candidate.area < um * fromcell.area:
+                    ml[cid] = [cs]
+    
+        self.current_ml = ml
+        self.update_displacement_array()
+
     def stage_1_hinted_match(self, d):
         self.displacement = self.get_average_v()
         self.match_with_displacement_field(d)
+
+    def stage_3_hinted_match(self, d):
+        self.update_displacement_array()
+
+        da = self.get_average_delta_a()
+
+        self.lm = 0.8 * da
+        self.um = 1.2 * da
+
+        #self.match_with_displacement_field(d)
+        self.match_with_smarty_iso(10)
+
+    def iso_vdisp(self, p):
+        x, y = p
+        center = Coords2D((381, 499))
+        #center = Coords2D((286, 408))
+        vd = Coords2D((30, 74))
+        #vd = Coords2D((56, 55))
+
+        #return ((p - center) / 9) + vd
+        return ((p - center) / 7) + vd
+
+    def stage_2_hinted_match(self, d):
+        #self.stage_2_hinted_match(d)
+        #self.get_divided_cells()
+        da = self.get_average_delta_a()
+
+        self.lm = 0.8 * da
+        self.um = 1.2 * da
+
+        self.match_with_iso(10)
 
     def build_centroid_array(self):
         centroids = [cell.centroid.astuple() for cid, cell in self.cdto]
@@ -225,8 +306,20 @@ class MatchData():
         candidates = [self.cdto[c] for c in cids]
         return zip(cids, candidates)
 
+    def get_average_delta_a(self):
+        areas = [area_ratio(cellfrom, cellsto) 
+                for cellfrom, cellsto 
+                in self.itermatches()]
+
+        return sum(areas) / len(areas)
+
     def print_match_stats(self):
         print self.get_average_v()
+
+        print self.get_average_delta_a()
+
+def area_ratio(cellfrom, cellsto):
+    return float(sum(cellto.area for cellto in cellsto)) / float(cellfrom.area)
 
 def main():
     #try:
