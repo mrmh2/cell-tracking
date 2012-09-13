@@ -11,6 +11,7 @@ import lnumbers
 import celldata
 from celldata import Coords2D
 import matchdata
+from mltools import read_ml
 
 def test_contains(myb, (x, y)):
     print "Testing if bb contains %d,%d:" % (x, y), myb.contains((x, y))
@@ -223,7 +224,10 @@ def ptest():
  
     print imgsurface.get_masks()
     print imgsurface.get_shifts()
-    
+
+def test_read_ml():
+    ml = read_ml('T00T01.match')
+    pprint.pprint(ml)
 
 def main():
     #test_bb()
@@ -234,7 +238,8 @@ def main():
     #test_centroid_summer()
     #test_smarter_centroid()
     #ptest()
-    test_overall_centroid()
+    #test_overall_centroid()
+    test_read_ml()
 
 if __name__ == '__main__':
     main()

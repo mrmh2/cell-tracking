@@ -210,13 +210,13 @@ class MatchDisplay():
         npaxdim = max(ov1.xdim, ov2.xdim)
         npaydim = max(ov2.ydim, ov2.ydim)
 
-        tbbox = bb.BoundingBox((0, 0), (200, 100))
+        tbbox = bb.BoundingBox((0, 0), (300, 100))
         self.tleft = self.create_text_box(tbbox)
         self.tleft.add_text("Loaded %d cells" % len(self.mda.cdfrom))
         lx, ly, _ = ov1.array.shape
         self.tleft.add_text("Image is %dx%d" % (lx, ly))
 
-        tbbox = bb.BoundingBox((2 * xdim/3, 0), (200, 100))
+        tbbox = bb.BoundingBox((2 * xdim/3, 0), (300, 100))
         self.tright = self.create_text_box(tbbox)
         self.tright.add_text("Loaded %d cells" % len(self.mda.cdto))
         rx, ry, _ = ov2.array.shape
@@ -224,15 +224,18 @@ class MatchDisplay():
 
         self.create_central_overlay(bbox3, npaxdim, npaydim)
 
-        tbbox = bb.BoundingBox((xdim/3, 0), (200, 100))
+        tbbox = bb.BoundingBox((xdim/3, 0), (300, 100))
         self.tmid = self.create_text_box(tbbox)
         self.tmid.add_text("Starting match...")
 
-        ct = CompTracker(ov1, ov2, self.mda, self.midov, self.tleft)
-        ia1.onclick = ct.set_left
-        ia2.onclick = ct.set_right
-        self.ct = ct
-        self.ct.mdisp = self
+        self.ia1 = ia1
+        self.ia2 = ia2
+
+        #ct = CompTracker(ov1, ov2, self.mda, self.midov, self.tleft)
+        #ia1.onclick = ct.set_left
+        #ia2.onclick = ct.set_right
+        #self.ct = ct
+        #self.ct.mdisp = self
 
         self.ovfrom = ov1
         self.ovto = ov2
@@ -272,9 +275,11 @@ class MatchDisplay():
         return ov, de.iarray
 
     def display_match(self, vd=celldata.Coords2D((0, 0))):
+        self.tmid.add_text("Updating, v=%s" % vd)
+        self.update()
         array = self.midov.array
-
         for cellfrom, cellsto in self.mda.itermatches():
+            #print cellfrom.centroid, cellsto[0].centroid
             vfrom = cellfrom.centroid
             self.ovfrom.plot_points(cellfrom, cellfrom.color)
             centroid_to = sum([cellto for cellto in cellsto], celldata.Cell([])).centroid
@@ -285,21 +290,21 @@ class MatchDisplay():
 
         self.tmid.add_text("Found %d matches" % len(self.mda.current_ml))
 
-        lcx, lcy = self.mda.cdfrom.center
-        c = 255, 255, 255
-        self.ovfrom.array[lcx+0, lcy+0] = c
-        self.ovfrom.array[lcx+1, lcy+0] = c
-        self.ovfrom.array[lcx-1, lcy+0] = c
-        self.ovfrom.array[lcx+0, lcy+1] = c
-        self.ovfrom.array[lcx+0, lcy-1] = c
-
-        rcx, rcy = self.mda.cdto.center
-        c = 255, 255, 255
-        self.ovto.array[rcx+0, rcy+0] = c
-        self.ovto.array[rcx+1, rcy+0] = c
-        self.ovto.array[rcx-1, rcy+0] = c
-        self.ovto.array[rcx+0, rcy+1] = c
-        self.ovto.array[rcx+0, rcy-1] = c
+#        lcx, lcy = self.mda.cdfrom.center
+#        c = 255, 255, 255
+#        self.ovfrom.array[lcx+0, lcy+0] = c
+#        self.ovfrom.array[lcx+1, lcy+0] = c
+#        self.ovfrom.array[lcx-1, lcy+0] = c
+#        self.ovfrom.array[lcx+0, lcy+1] = c
+#        self.ovfrom.array[lcx+0, lcy-1] = c
+#
+#        rcx, rcy = self.mda.cdto.center
+#        c = 255, 255, 255
+#        self.ovto.array[rcx+0, rcy+0] = c
+#        self.ovto.array[rcx+1, rcy+0] = c
+#        self.ovto.array[rcx-1, rcy+0] = c
+#        self.ovto.array[rcx+0, rcy+1] = c
+#        self.ovto.array[rcx+0, rcy-1] = c
 
         self.dmanager.update()
     
@@ -327,4 +332,19 @@ class MatchDisplay():
             px += pan_x
             py += pan_y
             self.update()
+
+    def display_single_match(self, cidfrom):
+        cellfrom = self.mda.cdfrom[cidfrom]
+        cidsto = self.mda.current_ml[cidfrom]
+        cellsto = [self.mda.cdto[cidto] for cidto in cidsto]
+        self.ovfrom.plot_points(cellfrom, cellfrom.color)
+        for cellto in cellsto:
+            self.ovto.plot_points(cellto, cellfrom.color)
+
+    def highlight_cell(self, cell, c=(255, 255, 255)):
+        if cell in self.mda.cdfrom.cells:
+            self.ovfrom.plot_points(cell, c)
+        if cell in self.mda.cdto.cells:
+            self.ovto.plot_points(cell, c)
+
         

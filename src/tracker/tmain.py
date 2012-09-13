@@ -23,9 +23,15 @@ class MatchAlgorithm(object):
     def run(self):
         mda = self.mda
         mdisplay = self.mdisplay
+
+        v = celldata.Coords2D((0, 0))
+        mda.set_displacement(v)
         if self.tp == 0:
-            v = celldata.Coords2D((-18, -8))
-            #v = celldata.Coords2D((14, 37))
+            #v = celldata.Coords2D((-18, -8))
+            v = celldata.Coords2D((14, 37))
+            mda.set_displacement(v)
+        if self.tp == 1:
+            v = celldata.Coords2D((0, 0))
             mda.set_displacement(v)
         if self.tp == 5:
             v = celldata.Coords2D((4, -38))
@@ -81,9 +87,9 @@ def load_data(expname, names):
     # This is now something of a list incomprehension
     return [[a[n] for n in names if n in a] for a in dlist]
 
-def matchdata_from_exp_and_tp(expname, tp):
+def matchdata_from_exp_and_tp(expname, tp, names):
     #names = ['Segmented image', 'L numbers', 'Projection']
-    names = ['New segmented image', 'L numbers', 'Gaussian projection']
+    #names = ['New segmented image', 'L numbers', 'Gaussian projection']
     expdata = load_data(expname, names)
     ifile1, lfile1, pfile1 = expdata[tp]
     ifile2, lfile2, pfile2 = expdata[tp + 1]
@@ -111,15 +117,17 @@ def main():
         print "Usage: %s experiment time_point" % os.path.basename(sys.argv[0])
         sys.exit(0)
 
-    #names = ['Segmented image', 'L numbers', 'Projection']
-    names = ['New segmented image', 'L numbers', 'Gaussian projection']
+    names = ['Segmented image', 'L numbers', 'Projection']
+    #names = ['New segmented image', 'L numbers', 'Gaussian projection']
     expdata = load_data(expname, names)
     ifile1, lfile1, pfile1 = expdata[tp]
     ifile2, lfile2, pfile2 = expdata[tp + 1]
  
-    mda = matchdata_from_exp_and_tp(expname, tp)
+    mda = matchdata_from_exp_and_tp(expname, tp, names)
     mdisplay = matchdisplay.MatchDisplay(ifile1, ifile2, pfile1, pfile2, mda)
     mdisplay.update()
+
+    mint = matchinteractor.MatchInteractor(mdisplay)
 
     mymatch = MatchAlgorithm(mda, tp, mdisplay)
     mymatch.run()

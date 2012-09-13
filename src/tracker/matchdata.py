@@ -22,10 +22,16 @@ def shades_of_jop():
 
 class MatchData():
 
+    def save_matchlist(self, filename):
+        with open('matchlist.txt', 'w') as f:
+            for k, v in self.current_ml.iteritems():
+                f.write("%d: %s\n" % (k, v))
+
     def set_displacement(self, v):
         self.displacement = v
 
     def get_average_v(self):
+        print "Av", self.current_ml
         displacements = [ts[0].centroid - f.centroid for f, ts in self.itermatches()]
         return sum(displacements, Coords2D((0, 0))) / len(displacements)
             
@@ -151,12 +157,16 @@ class MatchData():
                 cs = self.find_centroid(fromcell.centroid, v, d)
                 if cs != -1:
                     candidate = self.cdto[cs]
-                    #print "Areas:", fromcell.area, candidate.area
+                    print "Areas:", fromcell.area, candidate.area
                     if candidate.area > lm * fromcell.area and candidate.area < um * fromcell.area:
                         ml[cid] = [cs]
     
         self.current_ml = ml
         self.update_displacement_array()
+
+    def stage_1_hinted_match(self, d):
+        self.displacement = self.get_average_v()
+        self.match_with_displacement_field(d)
 
     def build_centroid_array(self):
         centroids = [cell.centroid.astuple() for cid, cell in self.cdto]
@@ -166,20 +176,22 @@ class MatchData():
         for (cid, cell) in self.cdto:
             self.centroid_array[cell.centroid.astuple()] = cid
 
-    def find_centroid(self, p, v, d):
-        cs = self.find_centroids_in_region(p, v, d)
+    def find_centroid(self, p, v, d, debug=False):
+        cs = self.find_centroids_in_region(p, v, d, debug)
 
         try:
             return cs[0]
         except IndexError:
             return -1
 
-    def find_centroids_in_region(self, p, s, sr):
+    def find_centroids_in_region(self, p, s, sr, debug=False):
         #s = p + celldata.Coords2D((9, -38))
-        #print "Looking at:", p, s
+        print "Looking at:", p, s
         sx, sy = p + s
-        #print "Slice around", sx, sy
+        print "Slice around", sx, sy
         subarray = self.centroid_array[sx-sr:sx+sr, sy-sr:sy+sr]
+
+        if debug: print subarray
         
         try:
             cs = [int(x) for x in np.nditer(subarray) if x != 0]
@@ -206,10 +218,15 @@ class MatchData():
         for cid, cell in celldata_from:
             cell.color = shades_of_jop()
 
+        self.current_ml = {}
+
     def best_matches_on_l(self, cid, n):
         cids = lnumbers.best_matches(self.lmatrix[cid], n)
         candidates = [self.cdto[c] for c in cids]
         return zip(cids, candidates)
+
+    def print_match_stats(self):
+        print self.get_average_v()
 
 def main():
     #try:

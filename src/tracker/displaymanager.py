@@ -84,6 +84,7 @@ class OverlayElement(DisplayElement):
     def plot_points(self, pl, c):
         for p in pl:
             x, y = p
+            #print "Plotting %d, %d" % (x, y)
             self[x, y] = c
 
 def get_scale_and_box(xdim, ydim, bbox):
@@ -126,9 +127,13 @@ class ImageElement(DisplayElement):
         cx, cy =  int(x * self.cmult), int(y * self.cmult)
 
         try:
-            self.iarray.mouse_click((cx, cy), button)
+            iarray = self.iarray
         except AttributeError:
-            pass
+            iarray = None
+
+        if iarray is not None:
+            self.iarray.mouse_click((cx, cy), button)
+        #    pass
         #if self.imgarray is not None:
             #self.array_handler(
             #print self.imgarray[cx, cy]
