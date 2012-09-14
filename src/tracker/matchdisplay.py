@@ -240,6 +240,7 @@ class MatchDisplay():
             self.ovto.plot_points(cell, c)
 
     def plot_some_shit(self, vd):
+        self.mda.update_iso_params()
         self.midov.blank()
 
         #center = Coords2D((320, 470))

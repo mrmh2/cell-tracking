@@ -65,7 +65,7 @@ class MatchData():
         xdim, ydim = self.centroid_array.shape
         self.displacement_array = np.empty([xdim, ydim], dtype=np.object)
         #centroids = [(f.centroid
-        # TODO - betetr, but now a bit loing
+        # TODO - better, but now a bit long
         posdisp = [(f.centroid, sum(ts, celldata.Cell([])).centroid - f.centroid) 
                     for f, ts in self.itermatches()]
         #for fcell, tcells in self.itermatches():

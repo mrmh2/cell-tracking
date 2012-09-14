@@ -3,6 +3,7 @@
 import re
 import os
 import sys
+import errno
 import pprint
 import ConfigParser
 
@@ -81,15 +82,22 @@ def main():
     sx1, sy1, sz1 = get_voxel_spacing(vfile1)
     sx2, sy2, sz2 = get_voxel_spacing(vfile2)
 
-    mname = 'T%02dT%02d.match' % (tp, tp + 1)
-
     mda = matchdata_from_exp_and_tp(expname, tp, names)
+
+    mname = 'T%02dT%02d.match' % (tp, tp + 1)
+    try:
+        ml = read_ml(mname)
+    except IOError, e:
+        if e.errno == errno.ENOENT:
+            ml = {}
+        else: raise
+
+    mda.current_ml = ml
+
     mdisplay = matchdisplay.MatchDisplay(ifile1, ifile2, pfile1, pfile2, mda, 
         scale=(sx2/sx1, sy2/sy1))
     mint = matchinteractor.MatchInteractor(mdisplay)
 
-    ml = read_ml(mname)
-    mda.current_ml = ml
     v = mda.get_average_v()
     mdisplay.display_match(v)
 
