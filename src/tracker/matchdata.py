@@ -10,6 +10,7 @@ import numpy as np
 import celldata
 from celldata import Coords2D
 import lnumbers
+from mutil import mean, msum
 
 def shades_of_jop():
     c1 = random.randint(127, 255) 
@@ -88,9 +89,14 @@ class MatchData():
         ul = self.um
     
         to_cids = []
-        xd, yd = self.get_average_v()
+        #xd, yd = self.get_average_v()
+        fcent = self.cdfrom[cid].centroid
+        xd, yd = self.iso_vdisp(fcent) + self.get_displacement_a(fcent)
         print "Testing for divide in %d" % cid
         for x, y in self.cdfrom[cid]:
+            #fcent = fromcell.centroid
+            #v = self.iso_vdisp(fcent) + self.get_displacement_a(fcent)
+            #xd, yd = self.iso_vdisp(((x, y)) + self.get_displacement_a((x, y)))
             #xd, yd = self.get_displacement_a((x, y))
             try:  
                 c = self.centroid_array[x + xd, y + yd]
@@ -124,7 +130,7 @@ class MatchData():
 
         self.divisions = ml
         self.current_ml.update(ml)
-        self.update_displacement_array()
+        #self.update_displacement_array()
 
     def get_displacement_a(self, p):
 
@@ -176,6 +182,8 @@ class MatchData():
         lm = self.lm
         um = self.um
 
+        self.update_iso_params()
+
         zero = Coords2D((0, 0))
 
         for cid, fromcell in self.cdfrom:
@@ -198,6 +206,8 @@ class MatchData():
         lm = self.lm
         um = self.um
 
+        self.update_iso_params()
+        self.update_displacement_array()
         zero = Coords2D((0, 0))
 
         for cid, fromcell in self.cdfrom:
@@ -219,7 +229,6 @@ class MatchData():
         self.match_with_displacement_field(d)
 
     def stage_3_hinted_match(self, d):
-        self.update_displacement_array()
 
         da = self.get_average_delta_a()
 
@@ -229,15 +238,30 @@ class MatchData():
         #self.match_with_displacement_field(d)
         self.match_with_smarty_iso(10)
 
+    def stage_4_hinted_match(self, d):
+
+        da = self.get_average_delta_a()
+
+        self.lm = 0.8 * da
+
+        self.get_divided_cells()
+
+
     def iso_vdisp(self, p):
         x, y = p
-        center = Coords2D((381, 499))
+        #center = Coords2D((381, 499))
         #center = Coords2D((286, 408))
-        vd = Coords2D((30, 74))
+        # 2-3?
+        #vd = Coords2D((30, 74))
         #vd = Coords2D((56, 55))
+        #return ((p - center) / 7) + vd
+
+        # 3 -> 4
+        center = self.center#Coords2D((326, 516))
+        vd = self.vd  #Coords2D((63, 80))
+        return ((p - center) / self.s) + vd
 
         #return ((p - center) / 9) + vd
-        return ((p - center) / 7) + vd
 
     def stage_2_hinted_match(self, d):
         #self.stage_2_hinted_match(d)
@@ -313,10 +337,44 @@ class MatchData():
 
         return sum(areas) / len(areas)
 
-    def print_match_stats(self):
-        print self.get_average_v()
+    def calc_iso_params(self, cs):
+        vdisps = [t - f for f, t in cs]
+        vd = sum(vdisps, Coords2D((0, 0))) / len(vdisps)
+        adj = [abs(v - vd) for v in vdisps]
+        m = min(adj)
+        #index of max element
+        index = [i for i, j in enumerate(adj) if j == m][0]
+        center = cs[index][0]
+    
+        top = [f - center for f, t in cs]
+        bottom = [t - f - vd for f, t in cs]
+    
+        xp = zip([x for x, y in top], [x for x, y in bottom])
+        xp = xp + zip([y for x, y in top], [y for x, y in bottom])
+    
+        s = mean([float(a)/float(b) for a, b in xp if b is not 0])
 
+        return center, vd, s
+
+    def update_iso_params(self):
+        inp = [(f.centroid, msum([t for t in ts]).centroid )
+        #inp = [(f.centroid, msum([t.centroid for t in ts]) )
+            for f, ts in self.itermatches()]
+
+        self.center, self.vd, self.s = self.calc_iso_params(inp)
+
+    def print_match_stats(self):
+        #print self.get_average_v()
         print self.get_average_delta_a()
+
+        for cellfrom, cellsto in self.itermatches():
+            print cellfrom.centroid, cellsto[0].centroid
+
+        inp = [(f.centroid, msum([t for t in ts]).centroid )
+            #centroid_to = sum([cellto for cellto in cellsto], celldata.Cell([])).centroid
+            for f, ts in self.itermatches()]
+
+        print self.calc_iso_params(inp)
 
 def area_ratio(cellfrom, cellsto):
     return float(sum(cellto.area for cellto in cellsto)) / float(cellfrom.area)

@@ -121,6 +121,9 @@ class MatchInteractor():
                 if event.unicode == '3':
                     self.mdisplay.mda.stage_3_hinted_match(7)
                     self.mdisplay.display_match(self.mdisplay.mda.get_average_v())
+                if event.unicode == '4':
+                    self.mdisplay.mda.stage_4_hinted_match(7)
+                    self.mdisplay.display_match(self.mdisplay.mda.get_average_v())
                 if event.key == 45:
                     scale = 0.9 * scale
                 if event.key == 61:

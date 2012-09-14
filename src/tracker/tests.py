@@ -12,6 +12,7 @@ import celldata
 from celldata import Coords2D
 import matchdata
 from mltools import read_ml
+from mutil import mean
 
 def test_contains(myb, (x, y)):
     print "Testing if bb contains %d,%d:" % (x, y), myb.contains((x, y))
@@ -229,6 +230,40 @@ def test_read_ml():
     ml = read_ml('T00T01.match')
     pprint.pprint(ml)
 
+def calc_iso_params(cs):
+    vdisps = [t - f for f, t in cs]
+    vd = sum(vdisps, Coords2D((0, 0))) / len(vdisps)
+    adj = [abs(v - vd) for v in vdisps]
+    m = min(adj)
+    index = [i for i, j in enumerate(adj) if j == m][0]
+    center = cs[index][0]
+
+    top = [f - center for f, t in cs]
+    bottom = [t - f - vd for f, t in cs]
+
+    xp = zip([x for x, y in top], [x for x, y in bottom])
+    xp = xp + zip([y for x, y in top], [y for x, y in bottom])
+
+    s = mean([float(a)/float(b) for a, b in xp])
+
+    return center, vd, s
+
+
+def test_isoculator():
+
+    myl =   [((336, 623),  (396, 726)),
+            ((228, 523),  (276, 598)),
+            ((532, 532),  (629, 605)),
+            ((224, 249),  (273, 272)),
+            ((350, 406),  (411, 455)),
+            ((473, 278),  (551, 303)),]
+
+    cs = [(Coords2D(f), Coords2D(t)) for f, t in myl]
+
+    center, vd, s = calc_iso_params(cs)
+
+    print center, vd, s
+
 def main():
     #test_bb()
     #test_l()
@@ -239,7 +274,8 @@ def main():
     #test_smarter_centroid()
     #ptest()
     #test_overall_centroid()
-    test_read_ml()
+    #test_read_ml()
+    test_isoculator()
 
 if __name__ == '__main__':
     main()
