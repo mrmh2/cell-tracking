@@ -133,6 +133,9 @@ class MatchDisplay():
     def update(self):
         self.dmanager.update()
 
+    def screenshot(self, filename):
+        pygame.image.save(self.dmanager.tdisplay.screen, filename)
+
     def create_text_box(self, tbbox):
         da = dm.DisplayArea(tbbox)
         te = dm.TextBoxElement()

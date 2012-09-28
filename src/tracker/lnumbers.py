@@ -7,7 +7,7 @@ import os
 
 def parse_line(l):
     cellid, sep, lcraw = l.strip().partition(": ")
-    return int(cellid), [float(f) for f in lcraw.split("  ")]
+    return int(cellid), [float(f) for f in lcraw.split()]
 
 def parse_l_file(filename):
 
@@ -27,10 +27,6 @@ def parse_l_file(filename):
 
     return ld
 
-def l_distance(lc1, lc2):
-    #TODO numpyisation
-    return sum([pow(a - b, 2) for (a, b) in zip(lc1, lc2)])
-
 def comp_contrib(ln, la, lb):
     return pow(la - lb, 2)
 
@@ -40,6 +36,40 @@ def weight_contrib(ln, la, lb):
 def smart_contrib(ln, la, lb):
     if ln > 8: return 0
     return ln * pow(la - lb, 2)
+
+class LMatrix(object):
+    def __init__(self, ln1, ln2, comp_function=weight_contrib):
+        #self.matrix = build_matrix_from_files(lfile1, lfile2, comp_function)
+        self.matrix = make_matrix(ln1, ln2, comp_function)
+        self.ln1 = ln1
+        self.ln2 = ln2
+
+    @classmethod
+    def from_files(cls, lfile1, lfile2, comp_function=weight_contrib):
+        ln1 = parse_l_file(lfile1)
+        ln2 = parse_l_file(lfile2)
+
+        return cls(ln1, ln2, comp_function)
+
+    #def __init__(self, lfile1, lfile2, comp_function=weight_contrib):
+    #    self.matrix = build_matrix_from_files(lfile1, lfile2, comp_function)
+
+    def best_n_matches(self, id, n):
+        b = self.matrix[id].keys()
+        b.sort(key=self.matrix[id].__getitem__)
+
+        return b[:n]
+
+    def best_match(self, id):
+        return self.best_n_matches(id, 1)
+
+    def match_with_score(self, id):
+        m, mb = self.best_n_matches(id, 2)
+        return m, self.matrix[id][mb] / self.matrix[id][m]
+
+def l_distance(lc1, lc2):
+    #TODO numpyisation
+    return sum([pow(a - b, 2) for (a, b) in zip(lc1, lc2)])
 
 def weighted_l_distance(lc1, lc2, comp_func):
     lzs = zip(range(0, 15), lc1, lc2)

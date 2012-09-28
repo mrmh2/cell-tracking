@@ -4,6 +4,7 @@ import os
 import sys
 import pprint
 import random
+from operator import itemgetter
 
 import numpy as np
 
@@ -22,6 +23,60 @@ def shades_of_jop():
     return tuple(random.sample([c1, c2, c3], 3))
 
 class MatchData():
+    def __init__(self, celldata_from, celldata_to):
+        self.cdfrom = celldata_from
+        self.cdto = celldata_to
+
+        ld1 = self.cdfrom.get_lnumbers()
+        ld2 = self.cdto.get_lnumbers()
+
+        self.build_centroid_array()
+        #self.lmatrix = lnumbers.make_matrix(ld1, ld2, lnumbers.weight_contrib)
+        self.lmatrix = lnumbers.LMatrix(ld1, ld2) 
+
+        self.hasdarray = False
+
+        self.lm = 0.8
+        self.um = 1.3
+
+        for cid, cell in celldata_from:
+            cell.color = shades_of_jop()
+
+        self.current_ml = {}
+        self.current_ml = self.get_possible_ml()
+
+    def single_iso_sample(self, ml):
+
+        sd = {k : ml[k] for k in random.sample(ml, 15)}
+
+        cs = []
+        for fid, tids in sd.iteritems():
+            fc = self.cdfrom[fid].centroid
+            tc = self.cdto[tids[0]].centroid
+
+            cs.append((fc, tc))
+
+
+        return self.calc_iso_params(cs), sd
+
+
+    def sampled_iso_params(self):
+        ml = self.get_possible_ml()
+
+        samples = [self.single_iso_sample(ml) for i in range(0, 50)]
+
+        for ((c, v, s), ml) in samples:
+            if s > 4:
+                self.center, self.vd, self.s = c, v, s
+                self.current_ml = ml
+
+    def get_loby_candidates(self):
+        lm = self.lmatrix
+        lobiness = [(id, sum(vals[6:11])) for id, vals in lm.ln1.iteritems()]
+        slobi = sorted(lobiness, key=itemgetter(1))
+        blobi = slobi[-45:-5]
+
+        return zip(*blobi)[0]
 
     def save_matchlist(self, filename):
         with open('matchlist.txt', 'w') as f:
@@ -54,6 +109,8 @@ class MatchData():
                 if d < d_max:
                     ml[cid] = [tocid]
         self.current_ml = ml
+
+        self.update_displacement_array()
 
     def itermatches(self):
         for cidfrom, cidsto in self.current_ml.iteritems():
@@ -304,27 +361,34 @@ class MatchData():
             return []
 
         return cs
+
+    def get_possible_ml(self):
+        pml = {id : self.lmatrix.best_n_matches(id, 5) 
+                for id in self.get_loby_candidates()}
     
-    def __init__(self, celldata_from, celldata_to):
-        self.cdfrom = celldata_from
-        self.cdto = celldata_to
+        for fid, tids in pml.iteritems():
+            for tid in tids:
+                delta_a = float(self.cdto[tid].area) / self.cdfrom[fid].area
+                if delta_a < 1.0 or delta_a > 1.7:
+                    pml[fid].remove(tid)
+    
+        ds = []
+        for fid, tids in pml.iteritems():
+            for tid in tids:
+                ds.append(abs(self.cdto[tid].centroid - self.cdfrom[fid].centroid))
+    
+        med_d = sorted(ds)[len(ds)/3]
+    
+        for fid, tids in pml.iteritems():
+            for tid in tids:
+                d = abs(self.cdto[tid].centroid - self.cdfrom[fid].centroid)
+                if d > med_d:
+                    pml[fid].remove(tid)
 
-        ld1 = self.cdfrom.get_lnumbers()
-        ld2 = self.cdto.get_lnumbers()
+        ml = {fid : pml[fid][:1] for fid in pml}
 
-        self.build_centroid_array()
-        self.lmatrix = lnumbers.make_matrix(ld1, ld2, lnumbers.weight_contrib)
-
-        self.hasdarray = False
-
-        self.lm = 0.8
-        self.um = 1.3
-
-        for cid, cell in celldata_from:
-            cell.color = shades_of_jop()
-
-        self.current_ml = {}
-
+        return ml
+    
     def best_matches_on_l(self, cid, n):
         cids = lnumbers.best_matches(self.lmatrix[cid], n)
         candidates = [self.cdto[c] for c in cids]

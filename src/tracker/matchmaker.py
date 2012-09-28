@@ -49,8 +49,8 @@ def matchdata_from_exp_and_tp(expname, tp, names):
     sx1, sy1, sz1 = get_voxel_spacing(vfile1)
     sx2, sy2, sz2 = get_voxel_spacing(vfile2)
   
-    celldata1 = celldata.CellData(ifile1)
-    celldata2 = celldata.CellData(ifile2, scale=(sx2/sy1, sy2/sy1))
+    celldata1 = celldata.CellData(ifile1, lfile=lfile1)
+    celldata2 = celldata.CellData(ifile2, lfile=lfile2, scale=(sx2/sy1, sy2/sy1))
     #celldata2 = celldata.CellData(ifile2)
 
     #celldata1 = celldata.CellData(ifile1, lfile1)
@@ -93,6 +93,8 @@ def main():
         else: raise
 
     mda.current_ml = ml
+    #mda.current_ml = mda.get_possible_ml()
+    mda.sampled_iso_params()
 
     mdisplay = matchdisplay.MatchDisplay(ifile1, ifile2, pfile1, pfile2, mda, 
         scale=(sx2/sx1, sy2/sy1))

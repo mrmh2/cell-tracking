@@ -1,8 +1,11 @@
 #!/usr/bin/env python2.7
 
+import os
 import sys
 import pprint
 import itertools
+import random
+from operator import itemgetter
 
 import pygame
 
@@ -12,7 +15,8 @@ import celldata
 from celldata import Coords2D
 import matchdata
 from mltools import read_ml
-from mutil import mean
+from mutil import mean, sorted_nicely
+from matchmaker import get_voxel_spacing
 
 def test_contains(myb, (x, y)):
     print "Testing if bb contains %d,%d:" % (x, y), myb.contains((x, y))
@@ -264,18 +268,195 @@ def test_isoculator():
 
     print center, vd, s
 
+def load_data(expname, names):
+    sys.path.insert(0, os.path.join(os.environ['HOME'], 'local/python'))
+    import get_data_files as gdf
+    d = gdf.get_data_files(expname)
+
+    dlist = [d[k] for k in sorted_nicely(d.keys())]
+    # This is now something of a list incomprehension
+    return [[a[n] for n in names if n in a] for a in dlist]
+
+def test_matchdata2():
+    expname = 'newexp'
+    tp = 5
+    names = ['Segmented image', 'L numbers', 'Projection', 'Microscope metadata']
+    expdata = load_data(expname, names)
+
+    ifile1, lfile1, pfile1, vfile1 = expdata[tp]
+    ifile2, lfile2, pfile2, vfile2 = expdata[tp + 1]
+    ml = read_ml('data/newexp/matches/T%02dT%02d.match' % (tp, tp + 1))
+
+    sx1, sy1, sz1 = get_voxel_spacing(vfile1)
+    sx2, sy2, sz2 = get_voxel_spacing(vfile2)
+  
+    celldata1 = celldata.CellData(ifile1, lfile=lfile1)
+    celldata2 = celldata.CellData(ifile2, lfile=lfile2, scale=(sx2/sy1, sy2/sy1))
+   
+    md = matchdata.MatchData(celldata1, celldata2)
+
+    allas = []
+    for cid in md.get_loby_candidates():
+        bm = md.lmatrix.best_n_matches(cid, 5)
+        areas = [float(md.cdto[tid].area)/md.cdfrom[cid].area for tid in bm]
+        try:
+            real_m = ml[cid]
+        except KeyError:
+            real_m = []
+        print cid
+        print bm
+        print real_m
+        print areas
+        for a in areas:
+            allas.append(a)
+
+    #print sorted(allas)[len(allas)/2], len(allas)
+
+    pml = {id : md.lmatrix.best_n_matches(id, 5) 
+            for id in md.get_loby_candidates()}
+
+    pprint.pprint(pml)
+
+    for fid, tids in pml.iteritems():
+        for tid in tids:
+            delta_a = float(md.cdto[tid].area) / md.cdfrom[fid].area
+            if delta_a < 1.0 or delta_a > 1.7:
+                pml[fid].remove(tid)
+
+    pprint.pprint(pml)
+
+    ds = []
+    for fid, tids in pml.iteritems():
+        for tid in tids:
+            ds.append(abs(md.cdto[tid].centroid - md.cdfrom[fid].centroid))
+
+    med_d = sorted(ds)[len(ds)/3]
+
+    for fid, tids in pml.iteritems():
+        for tid in tids:
+            d = abs(md.cdto[tid].centroid - md.cdfrom[fid].centroid)
+            if d > med_d:
+                pml[fid].remove(tid)
+
+    pprint.pprint(pml)
+
+    failed = 0
+    good = 0
+    for fid in pml:
+        #print fid,
+        try:
+            real_m = ml[fid]
+        except KeyError:
+            real_m = []
+
+        if len(real_m) == 1 and len(pml[fid]):
+            if real_m[0] != pml[fid][0]:
+                failed +=1
+                print 'BAD'
+            else:
+                good += 1
+
+    print failed, good, float(good) / (failed + good)
+
+    #ml = {fid : pml[fid][:1] for fid in pml}
+
+    ml = md.get_possible_ml()
+
+    s = random.sample(ml, 5)
+
+    sd = {k : ml[k] for k in random.sample(ml, 5)}
+
+    cs = []
+    for fid, tids in sd.iteritems():
+        fc = md.cdfrom[fid].centroid
+        tc = md.cdto[tids[0]].centroid
+
+        cs.append((fc, tc))
+
+    #inp = [(f.centroid, msum([t for t in ts]).centroid )
+        #inp = [(f.centroid, msum([t.centroid for t in ts]) )
+   #         for f, ts in self.itermatches()]
+
+    center, vd, s = md.calc_iso_params(cs)
+
+    print md.sampled_iso_params()
+
+
+
+def test_l_numbers():
+    expname = 'newexp'
+    tp = 5
+    names = ['Segmented image', 'L numbers', 'Projection', 'Microscope metadata']
+    expdata = load_data(expname, names)
+
+    ifile1, lfile1, pfile1, vfile1 = expdata[tp]
+    ifile2, lfile2, pfile2, vfile2 = expdata[tp + 1]
+
+    celldata1 = celldata.CellData(ifile1, lfile=lfile1)
+    #celldata2 = celldata.CellData(ifile2, lfile=lfile2)
+    #md = matchdata.MatchData(celldata1, celldata2)
+    #print md.lmatrix.best_match(515)
+    lm = lnumbers.LMatrix.from_files(lfile1, lfile2)
+    #for id, vals in lm.ln1.iteritems():
+    #    print id, lm.best_n_matches(id, 5), sum(vals[5:9])
+
+    lobiness = [(id, sum(vals[6:11])) for id, vals in lm.ln1.iteritems()]
+    slobi = sorted(lobiness, key=itemgetter(1))
+    blobi = slobi[-45:-5]
+
+    ml = read_ml('data/newexp/matches/T%02dT%02d.match' % (tp, tp + 1))
+
+    ts = 0
+    for id, score in blobi:
+        try:
+            real_m = ml[id]
+        except KeyError:
+            real_m = []
+        bm = lm.best_n_matches(id, 5)
+        success = False
+        for m in real_m:
+            if m in bm:
+                success = True
+                ts += 1
+
+        print id, score, bm, real_m, success
+
+    print ts
+
+    print zip(*blobi)[0]
+
+    #print lobiness
+
+    #print lm.best_match(456)
+
+#    print lm.best_n_matches(515, 3)
+#    print lm.best_match(515)
+#    m, score = lm.match_with_score(515)
+#    print float(celldata1[515].area) / celldata2[m].area
+#    print lm.match_with_score(322)
+#    m, score = lm.match_with_score(322)
+#    print float(celldata1[322].area) / celldata2[m].area
+#    print lm.match_with_score(324)
+#    m, score = lm.match_with_score(324)
+#    print float(celldata1[324].area) / celldata2[m].area
+
+    #print lm[515][515]
+
+
 def main():
     #test_bb()
     #test_l()
     #test_l_match('newexp')
     #test_coords_2D()
     #test_matchdata()
+    test_matchdata2()
     #test_centroid_summer()
     #test_smarter_centroid()
     #ptest()
     #test_overall_centroid()
     #test_read_ml()
-    test_isoculator()
+    #test_isoculator()
+    #test_l_numbers()
 
 if __name__ == '__main__':
     main()
