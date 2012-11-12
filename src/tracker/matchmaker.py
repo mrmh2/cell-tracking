@@ -94,7 +94,7 @@ def main():
 
     mda.current_ml = ml
     #mda.current_ml = mda.get_possible_ml()
-    mda.sampled_iso_params()
+    #mda.sampled_iso_params()
 
     mdisplay = matchdisplay.MatchDisplay(ifile1, ifile2, pfile1, pfile2, mda, 
         scale=(sx2/sx1, sy2/sy1))

@@ -54,6 +54,7 @@ class OverlayElement(DisplayElement):
         self.xdim, self.ydim = self.surface.get_size()
         self.visible = True
         self.shouldblank = blank
+        self.rescale = True
         print "OverlayElement initialised with size", self.surface.get_size()
 
     def draw(self, display, bbox):
@@ -69,7 +70,7 @@ class OverlayElement(DisplayElement):
 
         if self.visible:
             pygame.surfarray.blit_array(self.surface, self.array)
-            display.display_image(self.surface, dbox, rescale=True, blank=self.shouldblank)
+            display.display_image(self.surface, dbox, rescale=self.rescale, blank=self.shouldblank)
 
     def save_to_png(self, filename):
         scipy.misc.imsave(filename, self.array)
@@ -111,6 +112,7 @@ class ImageElement(DisplayElement):
             self.imgarray = pygame.surfarray.array2d(self.imgsurface)
         else:
             self.imgarray = None
+        self.rescale = True
 
     def generate_overlay(self):
         xdim, ydim = self.xdim, self.ydim
@@ -122,7 +124,7 @@ class ImageElement(DisplayElement):
         s, dbox = get_scale_and_box(self.xdim, self.ydim, bbox)
 
         if self.visible:
-            display.display_image(self.imgsurface, dbox, rescale=True)
+            display.display_image(self.imgsurface, dbox, rescale=self.rescale)
     
         self.cmult =  1 / s
 
@@ -197,6 +199,13 @@ class DisplayManager():
                 for e in a.delements:
                     if isinstance(e, ImageElement):
                         e.toggle_visible()
+        if keyval == 32:
+            for a in self.dareas:
+                for e in a.delements:
+                    try:
+                        e.rescale = not e.rescale
+                    except AttributeError:
+                        pass
 
     def update(self):
         for da in self.dareas:

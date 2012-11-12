@@ -104,6 +104,8 @@ class MatchInteractor():
                     self.rightcids = []
                 if event.unicode == ']':
                     self.mdisplay.plot_some_shit(self.mdisplay.mda.get_average_v())
+                if event.unicode == ' ':
+                    dmanager.key_input(32)
                 if event.unicode == 'p':
                     self.mdisplay.mda.print_match_stats()
                 if event.unicode == 's':
