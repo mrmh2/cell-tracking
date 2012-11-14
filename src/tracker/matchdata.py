@@ -177,6 +177,12 @@ class MatchData():
                 return to_cids
 
         return []
+
+
+    def get_known_divisions(self):
+        for cellfrom, cellsto in self.itermatches():
+            if len(cellsto) > 1:
+                print 'divide'
     
     def get_divided_cells(self):
         ml = {}

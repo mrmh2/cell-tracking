@@ -110,6 +110,8 @@ class MatchInteractor():
                     self.mdisplay.mda.print_match_stats()
                 if event.unicode == 's':
                     self.mdisplay.mda.save_matchlist('matchdata.txt')
+                if event.unicode == 'd':
+                    self.mdisplay.display_divisions()
                 if event.unicode == 'u':
                     self.mdisplay.display_match(self.mdisplay.mda.get_average_v())
                 if event.unicode == '1':

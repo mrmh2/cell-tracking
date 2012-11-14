@@ -204,15 +204,24 @@ class MatchDisplay():
         self.update()
     
     def display_divisions(self):
+        print 'Displaying divisions'
         ov1 = self.ovfrom
         ov2 = self.ovto
+        for cellfrom, cellsto in self.mda.itermatches():
+            if len(cellsto) > 1:
+                for cellto in cellsto:
+                    self.ovto.plot_points(cellto, cellfrom.color)
+            else:
+                for cellto in cellsto:
+                    self.ovto.plot_points(cellto, [255, 255, 255])
+                    
     #for cfrom, cto in mda.itermatches():
     #    ov1.plot_points(cfrom, (255, 255, 255))
     #    ov2.plot_points(cto, (255, 255, 255))
     #    
 
-    #for fcid, tocids in mda.divisions.iteritems():
-    ##    #print fcid, tocids
+        #for fcid, tocids in self.mda.divisions.iteritems():
+        #    print fcid, tocids
     #    print "%d -> %d, %d" % (fcid, tocids[0], tocids[1])
     #    print mda.cdfrom[fcid].color
     #    ov1.plot_points(mda.cdfrom[fcid], mda.cdfrom[fcid].color)

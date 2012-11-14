@@ -87,6 +87,7 @@ def main():
     mname = 'T%02dT%02d.match' % (tp, tp + 1)
     try:
         ml = read_ml(mname)
+        print 'Read match list from file, %d matches' % len(ml)
     except IOError, e:
         if e.errno == errno.ENOENT:
             ml = {}
