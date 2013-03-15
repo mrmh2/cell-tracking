@@ -23,8 +23,8 @@ def sorted_nicely( l ):
 def load_data(expname, names):
     sys.path.insert(0, os.path.join(os.environ['HOME'], 'local/python'))
     import get_data_files as gdf
-    d = gdf.get_data_files(expname)
-
+    #d = gdf.get_data_files(expname)
+    d = gdf.get_files_dictionary(expname)
     dlist = [d[k] for k in sorted_nicely(d.keys())]
     # This is now something of a list incomprehension
     return [[a[n] for n in names if n in a] for a in dlist]
@@ -43,6 +43,7 @@ def get_voxel_spacing(filename):
 
 def matchdata_from_exp_and_tp(expname, tp, names):
     expdata = load_data(expname, names)
+    #print expdata
     ifile1, lfile1, pfile1, vfile1 = expdata[tp]
     ifile2, lfile2, pfile2, vfile2 = expdata[tp + 1]
 
@@ -73,11 +74,16 @@ def main():
         print "Usage: %s experiment time_point" % os.path.basename(sys.argv[0])
         sys.exit(0)
 
-    names = ['Segmented image', 'L numbers', 'Projection', 'Microscope metadata']
+    #names = ['Segmented image', 'L numbers', 'Projection', 'Microscope metadata']
+    names = ['Segmented image', 'L numbers', 'Template segmented', 'Microscope metadata']
     #names = ['New segmented image', 'L numbers', 'Gaussian projection']
     expdata = load_data(expname, names)
+    #print expdata
     ifile1, lfile1, pfile1, vfile1 = expdata[tp]
     ifile2, lfile2, pfile2, vfile2 = expdata[tp + 1]
+
+    print ifile1, pfile1
+    print ifile2, pfile2
 
     sx1, sy1, sz1 = get_voxel_spacing(vfile1)
     sx2, sy2, sz2 = get_voxel_spacing(vfile2)
@@ -85,6 +91,7 @@ def main():
     mda = matchdata_from_exp_and_tp(expname, tp, names)
 
     mname = 'T%02dT%02d.match' % (tp, tp + 1)
+    print 'Looking for match list: %s' % mname
     try:
         ml = read_ml(mname)
         print 'Read match list from file, %d matches' % len(ml)

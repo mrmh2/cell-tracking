@@ -9,6 +9,8 @@ class InteractorArray:
         #print "Cid is", aval_to_cid(self.array[x, y])
         cid = self.aval_to_cid(self.array[x, y])
 
+        print 'Clicked cid was', cid
+
         self.onclick(cid)
 
     def aval_to_cid(self, val):

@@ -9,6 +9,8 @@ import itertools
 
 #import scipy
 #import scipy.misc
+import Image
+import numpy as np
 import pygame
 import pygame.display
 from pygame import surfarray
@@ -96,7 +98,9 @@ class Cell:
 
 class CellData:
     def __init__(self, filename, lfile=None, scale=(1,1)):
-        cd = cell_dict_from_file(filename, scale)
+        #cd = cell_dict_from_file(filename, scale)
+        #cd = cell_dict_from_file(filename, scale)
+        cd = cell_dict_from_file_np(filename, scale)
         self.cd = cd
 
         if lfile is not None:
@@ -145,8 +149,34 @@ class CellData:
                 ld[cid] = self[cid].lnumbers
 
         return ld
+
+def get_point_list(id_array, cid):
+    id_set = np.where(id_array == cid)
+    idx, idy = id_set
+    # TODO - work out why the transposition below is necessary
+    idp = zip(list(idy), list(idx))
+
+    return idp
             
-        
+def cell_dict_from_file_np(image_file, scale):
+    im = Image.open(image_file)
+    xdim, ydim = im.size
+    sx, sy = scale
+    print 'Scaling', sx, sy
+    im_scaled = im.resize((int(xdim * sx), int(ydim * sy)), Image.NEAREST)
+
+    ar = np.asarray(im_scaled)
+
+    xdim, ydim, _ = ar.shape
+
+    id_array = np.zeros((xdim, ydim), dtype=np.uint32)
+    id_array = ar[:,:,2] + 256 * ar[:, :, 1] + 256 * 256 * ar[:, :, 0]
+    cell_ids = list(np.unique(id_array))
+    cd = {cid: Cell(get_point_list(id_array, cid)) for cid in cell_ids}
+
+    del[cd[0]]
+
+    return cd
 
 def cell_dict_from_file(image_file, scale):
     """Take a numpy array containing values that represent segmentation ID, and return a
@@ -155,7 +185,7 @@ def cell_dict_from_file(image_file, scale):
 
     sx, sy = scale
 
-    print "Scaling", sx, sy
+    #print "Scaling", sx, sy
 
     try:
         imgsurface = pygame.image.load(image_file)
@@ -167,6 +197,7 @@ def cell_dict_from_file(image_file, scale):
     xdim, ydim = imgsurface.get_size()
     imgsurface = pygame.transform.scale(imgsurface, (int(sx * xdim), int(sy * ydim)))
     xdim, ydim = imgsurface.get_size()
+    print 'SIZE', xdim, ydim
     imgarray = surfarray.array2d(imgsurface)
     rs, gs, bs, ra = imgsurface.get_shifts()
     # TODO - work out what the hell is going on here (i.e. why does conversion
