@@ -1,3 +1,10 @@
-TODO: Tidy up file layout. A lot.
+TODO: Text display
+TODO: Sort out nasty cross platform colour
+TODO: Generate candidate match list then filter
+TODO: General nicening
+TODO: Inputmanager should take some way of displaymanager's functions
 TODO: Nicer way of loading data
 TODO: Load cell dict with scipy.imread not pygame
+
+DONE: Tidy tmain and move a lot of the stuff it does out
+DONE: Tidy up file layout. A lot.

@@ -2,62 +2,190 @@
 
 import os
 import sys
+import math
 import timeit
 import pprint
+import itertools
 
 #import scipy
 #import scipy.misc
+import Image
+import numpy as np
 import pygame
 import pygame.display
 from pygame import surfarray
 
+import lnumbers
+
+class Coords2D():
+    def __init__(self, (x, y)):
+        self.x = int(x)
+        self.y = int(y)
+
+    def dist(self, other):
+        return abs(self - other)
+
+    def __abs__(self):
+        return math.sqrt(self.x * self.x + self.y * self.y)
+
+    def __cmp__(self, other):
+        if self.x == other.x and self.y == other.y:
+            return 0
+        else:
+            return 1
+
+    def __repr__(self):
+        return "<Coords2D>: %d, %d" % (self.x, self.y)
+
+    def __sub__(self, other):
+        return Coords2D((self.x - other.x, self.y - other.y))
+    
+    def __add__(self, other):
+        return Coords2D((self.x + other.x, self.y + other.y))
+
+    def __mul__(self, other):
+        return Coords2D((self.x * other.x, self.y * other.y))
+
+    def __div__(self, other):
+        return Coords2D((self.x / other, self.y / other))
+
+    def __iter__(self):
+        return iter((self.x, self.y))
+
+    def astuple(self):
+        return self.x, self.y
+
 class Cell:
     def __init__(self, points_list):
         self.pl = points_list
-
-def compositeRGB_to_components(c):
-    R = c % 256
-    G = int(c / 256) % 256
-    B = int(c / (256 * 256)) % 256
-
-    return (R, G, B)
-
-def mangle_colour_value(c):
-    r, g, b = compositeRGB_to_components(c)
-    return b + 256 * g + 256 * 256 * r
-
-def build_celldict(imgarray):
-    """Take a numpy array containing values that represent segmentation ID, and return a
-    dictionary keyed by the ID containing a list of points in absolute coordinates which
-    comprise that cell"""
-    # TODO - probably (definitely) smarter ways to do this
-
-    xdim, ydim = imgarray.shape
-    cd = {}
-    # Color values are mangled for some reason. Rather than recalculate the mangled color 
-    # value for every single pixel in the image, let's build a hash table (dictionary)
-    # as we go along
-    md = {}
+        self.lnumbers = None
+        if len(self.pl):
+            self.ctroid = self.calc_centroid()
     
-    for x in range(0, xdim):
-        for y in range (0, ydim):
-            c = imgarray[x, y]
+    def __iter__(self):
+        return iter(self.pl)
 
-            if md.has_key(c):
-                a = md[c]
-            else:
-                md[c] = mangle_colour_value(c)
-                a = md[c]
+    def __len__(self):
+        return len(self.pl)
 
-            if not cd.has_key(a): cd[a] = [(x, y)]
-            else: cd[a].append((x, y))
+    def append(self, value):
+        self.pl.append(value)
+
+    @property
+    def centroid(self):
+        return self.ctroid
+
+    def update_centroid(self):
+        self.ctroid = self.calc_centroid()
+
+    def calc_centroid(self):
+        xs, ys = zip(*self.pl)
+        x, y = sum(xs) / len(self.pl), sum(ys) / len(self.pl)
+        return Coords2D((x, y))
+
+    def set_area(self):
+        self.area = len(self.pl)
+
+    def set_lnumbers(self, ln):
+        self.lnumbers = ln
+
+    def __add__(self, other):
+        tpl = list(self.pl) + list(other.pl)
+        return Cell(tpl)
+
+    #centroid = property(get_centroid)
+
+
+class CellData:
+    def __init__(self, filename, lfile=None, scale=(1,1)):
+        #cd = cell_dict_from_file(filename, scale)
+        #cd = cell_dict_from_file(filename, scale)
+        cd = cell_dict_from_file_np(filename, scale)
+        self.cd = cd
+
+        if lfile is not None:
+            self.read_l_numbers(lfile)
+
+        for cid, cell in self:
+            cell.ctroid = cell.calc_centroid()
+            cell.set_area()
+
+    @property
+    def center(self):
+        allpl = [c.pl for c in self.cells]
+        myl = list(itertools.chain.from_iterable(allpl))
+        xs, ys = zip(*myl)
+        return sum(xs) / len(xs), sum(ys) / len(ys)
+
+    @property
+    def cells(self):
+        return self.cd.values()
+
+    def __len__(self):
+        return len(self.cd)
+
+    def keys(self):
+        return self.cd.keys()
+
+    def __iter__(self):
+        return self.cd.iteritems()
+
+    def __getitem__(self, value):
+        return self.cd[value]
+
+    def __delitem__(self, item):
+        del(self.cd[item])
+
+    def read_l_numbers(self, filename):
+        ln = lnumbers.parse_l_file(filename)
+
+        for cid in ln:
+            self[cid].set_lnumbers(ln[cid])
+
+    def get_lnumbers(self):
+        ld = {}
+        for (cid, cell) in self:
+            if self[cid].lnumbers is not None:
+                ld[cid] = self[cid].lnumbers
+
+        return ld
+
+def get_point_list(id_array, cid):
+    id_set = np.where(id_array == cid)
+    idx, idy = id_set
+    # TODO - work out why the transposition below is necessary
+    idp = zip(list(idy), list(idx))
+
+    return idp
+            
+def cell_dict_from_file_np(image_file, scale):
+    im = Image.open(image_file)
+    xdim, ydim = im.size
+    sx, sy = scale
+    print 'Scaling', sx, sy
+    im_scaled = im.resize((int(xdim * sx), int(ydim * sy)), Image.NEAREST)
+
+    ar = np.asarray(im_scaled)
+
+    xdim, ydim, _ = ar.shape
+
+    id_array = np.zeros((xdim, ydim), dtype=np.uint32)
+    id_array = ar[:,:,2] + 256 * ar[:, :, 1] + 256 * 256 * ar[:, :, 0]
+    cell_ids = list(np.unique(id_array))
+    cd = {cid: Cell(get_point_list(id_array, cid)) for cid in cell_ids}
+
+    del[cd[0]]
 
     return cd
 
-def cell_dict_from_file(image_file, sx, sy):  
+def cell_dict_from_file(image_file, scale):
     """Take a numpy array containing values that represent segmentation ID, and return a
     dictionary keyed by the ID containing a list of points in absolute coordinates which
     comprise that cell"""
+
+    sx, sy = scale
+
+    #print "Scaling", sx, sy
 
     try:
         imgsurface = pygame.image.load(image_file)
@@ -67,9 +195,14 @@ def cell_dict_from_file(image_file, sx, sy):
         sys.exit(2)
 
     xdim, ydim = imgsurface.get_size()
-    imgsurface = pygame.transform.scale(imgsurface, (int(xdim * sx), int(ydim * sy)))
+    imgsurface = pygame.transform.scale(imgsurface, (int(sx * xdim), int(sy * ydim)))
     xdim, ydim = imgsurface.get_size()
+    print 'SIZE', xdim, ydim
     imgarray = surfarray.array2d(imgsurface)
+    rs, gs, bs, ra = imgsurface.get_shifts()
+    # TODO - work out what the hell is going on here (i.e. why does conversion
+    # with the values returned above not work properly on some system
+    rs, gs, bs = 16, 8, 0
 
     cmap = {}
     cd = {}
@@ -81,63 +214,18 @@ def cell_dict_from_file(image_file, sx, sy):
                 c = cmap[val]
             else:
                 r, g, b, a = imgsurface.unmap_rgb(val)
-                c = b + 256 * g + 256 * 256 * r
+                c = (r << rs) + (g << gs) + (b << bs)
                 cmap[val] = c
 
-            if c not in cd: cd[c] = [(x, y)]
+            if c not in cd: cd[c] = Cell([(x, y)])
+            #if c not in cd: cd[c] = [(x, y)]
             else: cd[c].append((x, y))
 
-    return cd
-
-def old_cell_dict_from_file(filename, sx, sy):
-    try:
-        imgsurface = pygame.image.load(filename)
-        xdim, ydim = imgsurface.get_size()
-        imgsurface = pygame.transform.scale(imgsurface, (int(xdim * sx), int(ydim * sy)))
-        imgarray = surfarray.array2d(imgsurface)
-        cd = build_celldict(imgarray)
-    except pygame.error, e:
-        print "Couldn't load %s" % filename
-        print e
-        sys.exit(2)
+    del cd[0]
 
     return cd
 
-class CellData:
-    def __init__(self, filename, sx, sy, cachedir='/mnt/tmp'):
-        self.cd = cell_dict_from_file(filename, sx, sy)
-
-    def set_disp_panel(self, disp_panel):
-        self.disp_panel = disp_panel
-
-    def highlight_cell(self, cid, col, array=None):
-        if array is None:
-            try: 
-                array = self.disp_panel.array
-            except AttributeError:
-                print "ERROR: No array to display to in highlight_cell"
-                sys.exit(2)
-        c = rgb_to_comp(col)
-        for x, y in self.cd[cid]:
-            array[x, y] = c
-
-    def relative_rep(self, cid):
-        ox, oy = get_centroid(self.cd[cid])
-
-        npl = []
-        for x, y in self.cd[cid]:
-            npl.append((x - ox, y - oy))
-
-        return npl
-
-def main():
-    try:
-        image_file = sys.argv[1]
-        l_file = sys.argv[2]
-    except IndexError:
-        print "Usage: %s image_file" % os.path.basename(sys.argv[0])
-        sys.exit(0)
-
+def some_testing(image_file, l_file):
     sx = 1
     sy = 1
     cd = cell_dict_from_file(image_file, sx, sy)
@@ -148,8 +236,30 @@ def main():
     a = set(ls)
     b = set(cd.keys())
 
-    #print sorted(list(a  - (a & b)))
-    #print sorted(list(b  - (a & b)))
+def main():
+    try:
+        #image_file1 = sys.argv[1]
+        #l_file = sys.argv[2]
+        expname = sys.argv[1]
+        tp = sys.argv[2]
+    except IndexError:
+        print "Usage: %s experiment time_point" % os.path.basename(sys.argv[0])
+        sys.exit(0)
+
+    sys.path.insert(0, '/Users/hartleym/local/python')
+    import get_data_files as gdf
+
+    d = gdf.get_data_files(expname, int(tp))
+
+    ifile = d['Segmented image']
+    lfile = d['L numbers']
+
+    print ifile, lfile
+
+    celldata = CellData(ifile, lfile)
+
+    for (cid, cell) in celldata:
+        print cid, cell.centroid()
 
 
 if __name__ == '__main__':

@@ -16,7 +16,7 @@ import numpy
 import celldata as cd
 
 caption_string = "Cell tracking"
-gsx = 0.25
+gsx = 0.35
 
 debug = True
 
@@ -59,6 +59,8 @@ class MatchData:
     def make_ready(self):
         #self.m = build_matrix(self.lfile1, self.lfile2, weight_contrib, cachedir='/mnt/tmp')
         self.m = build_matrix(self.lfile1, self.lfile2, weight_contrib, cachedir=None)
+        #self.m = build_matrix(self.lfile1, self.lfile2, weight_contrib, cachedir=None)
+        #self.m = build_matrix(self.lfile1, self.lfile2, weight_contrib, cachedir=None)
         self.ready = True
 
     def set_display_panels(self, from_panel, to_panel, match_panel, extra_panel):
@@ -1633,14 +1635,12 @@ def new_loader(expname):
     d = gdf.get_data_files(expname)
     dps = []
     for dp in sorted(d.iteritems()):
-        print dp
         name, vd = dp
         a = [vd['Rotated projection'], vd['Rotated image'], vd['L numbers']]
         dps.append(a)
 
-    return dps
+    return dps[:2]
 
-    sys.exit(0)
 
 
 def main():
@@ -1672,7 +1672,7 @@ def main():
 
 
     dm.mds = mds
-    dm.set_current_md(4)
+    dm.set_current_md(0)
 
     screen = init_screen(xdim, ydim)
     dm.surface = screen

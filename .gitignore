@@ -6,3 +6,4 @@ bin/*
 *.a
 data
 *.pyc
+*.png
