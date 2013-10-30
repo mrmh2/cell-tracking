@@ -1,10 +1,1 @@
-data/
-localmisc/
-Tmp/
-bin/*
-*.o
-*.a
-*.pyc
-data
-unsorted-data
-*.match
+*.png

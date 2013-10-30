@@ -16,6 +16,8 @@ class MatchInteractor():
         self.tleft = mdisplay.tleft
         self.tright = mdisplay.tright
 
+        self.filename = 'matchlist.txt'
+
         self.mdisplay = mdisplay
 
         self.leftcell = None
@@ -109,7 +111,8 @@ class MatchInteractor():
                 if event.unicode == 'p':
                     self.mdisplay.mda.print_match_stats()
                 if event.unicode == 's':
-                    self.mdisplay.mda.save_matchlist('matchdata.txt')
+                    print "Saving as: ", self.filename
+                    self.mdisplay.mda.save_matchlist(self.filename)
                 if event.unicode == 'd':
                     self.mdisplay.display_divisions()
                 if event.unicode == 'u':

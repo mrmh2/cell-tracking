@@ -11,7 +11,7 @@ import numpy as np
 import celldata
 from celldata import Coords2D
 import lnumbers
-from mutil import mean, msum
+from mutil import mean, msum, mkdir_p
 
 def shades_of_jop():
     c1 = random.randint(127, 255) 
@@ -43,7 +43,7 @@ class MatchData():
             cell.color = shades_of_jop()
 
         self.current_ml = {}
-        self.current_ml = self.get_possible_ml()
+        #self.current_ml = self.get_possible_ml()
 
     def single_iso_sample(self, ml):
 
@@ -79,7 +79,10 @@ class MatchData():
         return zip(*blobi)[0]
 
     def save_matchlist(self, filename):
-        with open('matchlist.txt', 'w') as f:
+        dirname = os.path.dirname(filename)
+        if not os.path.exists(dirname):
+            mkdir_p(dirname)
+        with open(filename, 'w') as f:
             for k, v in self.current_ml.iteritems():
                 f.write("%d: %s\n" % (k, v))
 
