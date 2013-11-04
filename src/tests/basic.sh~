@@ -1,0 +1,4 @@
+#!/bin/bash
+hartleym@tuiuiu:~/projects/celltracking$ PYTHONPATH=~/nlocal/python/
+hartleym@tuiuiu:~/projects/celltracking$ ./src/tracker/matchmaker.py data/ExpID3078/plantA/ 4
+
